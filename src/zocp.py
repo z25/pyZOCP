@@ -75,8 +75,8 @@ def dict_merge(a, b, path=None):
 
 class ZOCP(Pyre):
 
-    def __init__(self, capability={}):
-        super().__init__()
+    def __init__(self, capability={}, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.peers = {} # id : capability data
         self.name = capability.get('_name')
         self.capability = capability
@@ -267,7 +267,7 @@ class ZOCP(Pyre):
     #########################################
     # Internal methods
     #########################################
-    def _get_message(self):
+    def get_message(self):
         # A message coming from a zre node contains:
         # * msg type
         # * msg peer id
@@ -312,7 +312,7 @@ class ZOCP(Pyre):
                 if method   == 'GET':
                     self._handle_GET(msg[method], peer, grp)
                 elif method == 'SET':
-                    self._handle_POST(msg[method], peer, grp)
+                    self._handle_SET(msg[method], peer, grp)
                 elif method == 'CALL':
                     self._handle_CALL(msg[method], peer, grp)
                 elif method == 'SUB':
@@ -327,7 +327,7 @@ class ZOCP(Pyre):
                     self._handle_SIG(msg[method], peer, grp)
                 else:
                     try:
-                        func = getattr(obj, 'handle_'+method)
+                        func = getattr(self, 'handle_'+method)
                         func(msg[method])
                     except:
                         raise Exception('No %s method on resource: %s' %(method,object))
@@ -386,9 +386,12 @@ class ZOCP(Pyre):
             try:
                 items = dict(poller.poll())
                 if self.get_socket() in items and items[self.get_socket()] == zmq.POLLIN:
-                    self._get_message()
+                    self.get_message()
             except (KeyboardInterrupt, SystemExit):
                 break
+        self.stop()
+
+    def __del__(self):
         self.stop()
 
 if __name__ == '__main__':

@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-import sys
-print(sys.path)
 from zocp import ZOCP
 
 if __name__ == '__main__':
