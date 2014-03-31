@@ -16,7 +16,7 @@ camSettings = {}
 mistSettings = ()
 
 z = ZOCP()
-z.set_node_name("ZOCP-Test")
+z.set_node_name("Blender")
 
 #    Menu in UI region
 #
