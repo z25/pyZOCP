@@ -113,11 +113,11 @@ class ZOCP(Pyre):
         Return node's name
         """
         return self.capability.get('_name')
-    
+
     def register_int(self, name, int, access='r', min=None, max=None, step=None):
         """
         Register an integer variable
-        
+
         Arguments are:
         * name: the name of the variable as how nodes can refer to it
         * int: the variable
@@ -291,7 +291,7 @@ class ZOCP(Pyre):
             grp = msg.pop(0)
             self.on_peer_join(peer, grp, msg)
             return
-        elif type == "LEAVE":
+        if type == "LEAVE":
             grp = msg.pop(0)
             self.on_peer_leave(peer, grp, msg)
             return
@@ -391,8 +391,8 @@ class ZOCP(Pyre):
                 break
         self.stop()
 
-    def __del__(self):
-        self.stop()
+    #def __del__(self):
+    #    self.stop()
 
 if __name__ == '__main__':
     
