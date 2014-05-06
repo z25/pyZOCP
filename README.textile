@@ -1,4 +1,14 @@
-pyZOCP
-======
+h1. pyZOCP
 
-Python ZOCP  implementation (Z25 Orchestration Control Protocol)
+Python ZOCP implementation (Z25 Orchestration Control Protocol)
+
+h2. Quick installation on Ubuntu Trusty
+
+<pre>
+sudo apt-get install python3-zmq
+git clone https://github.com/zeromq/pyre.git
+git clone https://github.com/z25/pyZOCP.git
+cd pyZOCP/examples
+PYTHONPATH="../..:../src" python3 simple_node.py
+</pre>
+
