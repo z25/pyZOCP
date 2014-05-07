@@ -488,7 +488,7 @@ class urwZOCP(zocp.ZOCP):
             #urwid.Overlay(top_w, bottom_w, align, width, valign, height, min_width=None, min_height=None, left=0, right=0, top=0, bottom=0)    
             index = len(frame.contents)
             frame.contents.insert(index, (ol, ('given', 30)))
-        self.foot.original_widget.set_text("%s" %cells.focus.original_widget.node_id)
+        self.foot.original_widget.set_text("%s" %self.cells.focus.original_widget.node_id)
 
     #########################################
     # ZOCP Event methods.
