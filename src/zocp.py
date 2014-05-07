@@ -291,7 +291,7 @@ class ZOCP(Pyre):
         grp=None
         if type == "ENTER":
             if not peer in self.peers.keys():
-                self.peers.update({peer: ""})
+                self.peers.update({peer: {}})
             self.peer_get_capability(peer)
             self.on_peer_enter(peer, msg)
             return
