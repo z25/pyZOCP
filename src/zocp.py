@@ -188,6 +188,18 @@ class ZOCP(Pyre):
         """
         self.capability[name] = {'value': bl, 'typeHint': 'bool', 'access':access }
         self.on_modified()
+
+    def register_string(self, name, s, access='r'):
+        """
+        Register a string variable
+
+        Arguments are:
+        * name: the name of the variable as how nodes can refer to it
+        * s: the variable
+        * access: 'r' and/or 'w' as to if it's readable and writeable state
+        """
+        self.capability[name] = {'value': s, 'typeHint': 'string', 'access':access }
+        self.on_modified()
         
     #########################################
     # Node methods to peers
