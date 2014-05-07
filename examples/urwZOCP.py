@@ -429,11 +429,6 @@ class ZOCPNodeWidget(urwid.WidgetWrap):
         dat = {name: {'value': value}}
         z.whisper(self.node_id, json.dumps({'SET': dat}).encode('utf-8'))
 
-def exit_program(key):
-    print("Doei")
-    z.stop()
-    raise urwid.ExitMainLoop()
-
 palette = [
     (None,  'light gray', 'black'),
     ('selected', 'white', 'dark blue'),
@@ -513,7 +508,6 @@ class urwZOCP(zocp.ZOCP):
     def on_peer_exit(self, peer, *args, **kwargs):
         print("ZOCP EXIT    : %s" %(peer.hex))
         nd = self.znodes.pop(peer)
-        print(nd)
         if nd:
             self.cells.contents.clear()
             for val in self.znodes.values():
