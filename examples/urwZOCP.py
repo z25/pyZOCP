@@ -21,6 +21,7 @@ import sys
 import io
 import zmq
 import time
+import zocp
 
 # http://stackoverflow.com/questions/38987/how-can-i-merge-union-two-python-dictionaries-in-a-single-expression?rq=1
 def mergedicts(a, b, path=None):
@@ -428,11 +429,6 @@ class ZOCPNodeWidget(urwid.WidgetWrap):
         dat = {name: {'value': value}}
         z.whisper(self.node_id, json.dumps({'SET': dat}).encode('utf-8'))
 
-def exit_program(key):
-    print("Doei")
-    z.stop()
-    raise urwid.ExitMainLoop()
-
 palette = [
     (None,  'light gray', 'black'),
     ('selected', 'white', 'dark blue'),
@@ -460,74 +456,89 @@ focus_map_pg = {
     'pg smooth': 'focus pg smooth',
     'options': 'focus options'
 }
-def show_or_exit(key):
-    if key == 'esc':
-        z.stop()
-        raise urwid.ExitMainLoop()
-    if key in ('s', 'S'):
-        nodes['node1'].update(changed_data)
-    if key in ('a', 'A'):
-        index = len(cells.contents)
-        cells.contents.insert(index, (node3, ('given', 20)))
-    if key in ('q', 'Q'):
-        out.get_widget().set_text("")
-    if key in ('u', 'U'):
-        sen = {'SET': {'zocpBool': { "value": False}}}
-        for n in nodes.values():
-            if n.node_id:
-                z.whisper(n.node_id, json.dumps(sen).encode('utf-8')) 
-    if key in ('l', 'L'):
-        listbox = urwid.Text('Boe')
-        body = urwid.Text('Blaaa')
-        ol = urwid.Overlay(listbox, body, 'center', 30, 'middle', 10)
-        #urwid.Overlay(top_w, bottom_w, align, width, valign, height, min_width=None, min_height=None, left=0, right=0, top=0, bottom=0)    
-        index = len(frame.contents)
-        frame.contents.insert(index, (ol, ('given', 30)))
-    foot.original_widget.set_text("%s" %cells.focus.original_widget.node_id)
 
+class urwZOCP(zocp.ZOCP):
 
-def get_zocp_message():
-    while (z.get_socket().getsockopt(zmq.EVENTS) & zmq.POLLIN):
-        z.get_message()
-        #m = z.get_socket().recv_multipart()
-        for peer, data in z.peers.items():
-            if isinstance(data, dict):
-                #print(data)
-                nd = nodes.get(peer)
-                if not nd:
-                    nd = ZOCPNodeWidget(data, peer)
-                    nodes[peer] = nd
-                    index = len(cells.contents)
-                    #cells.contents.insert(index, (nd, ('given', 20)))
-                    cells.contents.append((urwid.AttrMap(nd, 'options', focus_map), cells.options('given', 20)))
-                else:
-                    nd.update(data)
-        for nd in nodes.values():
-            nd.update();
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.oldout = sys.stdout
+        self.out = UrwStdWriter(io.BytesIO(), sys.stdout.encoding)
+        self.znodes = {}
+
+        # Urwid containers
+        self.cells = urwid.GridFlow(self.znodes.values(), 20, 1, 0, 'left')
+        self.foot = urwid.AttrMap(urwid.Text("bah", align='center'), 'header')
+        self.frame = urwid.Pile((self.foot, self.cells, self.out.get_widget()), 1)
+        self.fill = urwid.Filler(self.frame, 'top')
+        self.loop = urwid.MainLoop(self.fill, palette, unhandled_input=self.handle_input, event_loop=ZmqEventLoop(), pop_ups=True)
+
+        # capture std output
+        sys.stdout = self.out
+
+    def handle_input(self, key):
+        if key == 'esc':
+            self.stop()
+            raise urwid.ExitMainLoop()
+        if key in ('q', 'Q'):
+            out.get_widget().set_text("")
+        if key in ('l', 'L'):
+            listbox = urwid.Text('Boe')
+            body = urwid.Text('Blaaa')
+            ol = urwid.Overlay(listbox, body, 'center', 30, 'middle', 10)
+            #urwid.Overlay(top_w, bottom_w, align, width, valign, height, min_width=None, min_height=None, left=0, right=0, top=0, bottom=0)    
+            index = len(frame.contents)
+            frame.contents.insert(index, (ol, ('given', 30)))
+        self.foot.original_widget.set_text("%s" %cells.focus.original_widget.node_id)
+
+    #########################################
+    # ZOCP Event methods.
+    #########################################
+    def on_peer_enter(self, peer, *args, **kwargs):
+        print("ZOCP ENTER   : %s" %(peer.hex))
+        nd = self.znodes.get(peer)
+        if not nd:
+            #raise Exception("bla", self.peers)
             
-oldout =  sys.stdout
-out = UrwStdWriter(io.BytesIO(), sys.stdout.encoding)
+            nd = ZOCPNodeWidget(self.peers[peer], peer)
+            self.znodes[peer] = (urwid.AttrMap(nd, 'options', focus_map), self.cells.options('given', 20))
+            #index = len(cells.contents)
+            #cells.contents.insert(index, (nd, ('given', 20)))
+            self.cells.contents.append(self.znodes[peer])
 
-#node_data = json.loads(control_ex)
-#changed_data = json.loads(change_ex)
-#node_data2 = json.loads(control_ex2)
-#node = ZOCPNodeWidget(node_data)
-#node2 = ZOCPNodeWidget(node_data2)
-#node3 = ZOCPNodeWidget(node_data2)
-nodes = {}#'node1': node, 'node2': node2}
-cells = urwid.GridFlow(nodes.values(), 20, 1, 0, 'left')
-foot = urwid.AttrMap(urwid.Text("bah", align='center'), 'header')
-frame = urwid.Pile((foot, cells, out.get_widget()), 1)
-#fill = urwid.Filler(cells, 'top')
-fill = urwid.Filler(frame, 'top')
-#urwid.MainLoop.screen.set_terminal_properties(88, True, True)
-loop = urwid.MainLoop(fill, palette, unhandled_input=show_or_exit, event_loop=ZmqEventLoop(), pop_ups=True)
-#loop.screen.set_terminal_properties(88, True, True)
-sys.stdout = out
-import zocp
-ctx = zmq.Context()
-z = zocp.ZOCP(ctx=ctx)
-#node.open_box(node)
-handle = loop.watch_file(z.get_socket().getsockopt(zmq.FD), get_zocp_message)
-loop.run()
-#z.stop()
+    def on_peer_exit(self, peer, *args, **kwargs):
+        print("ZOCP EXIT    : %s" %(peer.hex))
+        nd = self.znodes.pop(peer)
+        if nd:
+            self.cells.contents.clear()
+            for val in self.znodes.values():
+                self.cells.contents.append(val)
+        #self.cells.update();
+
+    def on_peer_join(self, peer, grp, *args, **kwargs):
+        print("ZOCP JOIN    : %s joined group %s" %(peer.hex, grp))
+
+    def on_peer_leave(self, peer, grp, *args, **kwargs):
+        print("ZOCP LEAVE   : %s left group %s" %(peer.hex, grp))
+
+    def on_peer_whisper(self, peer, *args, **kwargs):
+        print("ZOCP WHISPER : %s whispered: %s" %(peer.hex, args))
+
+    def on_peer_shout(self, peer, grp, *args, **kwargs):
+        print("ZOCP SHOUT   : %s shouted in group %s: %s" %(peer.hex, grp, args))
+
+    def on_peer_modified(self, peer, *args, **kwargs):
+        print("ZOCP MODIFIED: %s modified %s" %(peer.hex, args))
+        nd = self.znodes.get(peer)
+        if nd:
+            nd[0].original_widget.update(self.peers.get(peer, {}))
+
+    def run(self):
+        handle = self.loop.watch_file(self.get_socket(), self.get_message)
+        self._running = True
+        self.loop.run()
+        self.stop()
+
+if __name__ == "__main__":
+    ctx = zmq.Context()
+    z = urwZOCP(ctx=ctx)
+    z.run()

@@ -12,3 +12,15 @@ cd pyZOCP/examples
 PYTHONPATH="../..:../src" python3 simple_node.py
 </pre>
 
+h2. Quick installation on OSX 
+
+Install Python3 from "Python.org":https://www.python.org/downloads/mac-osx/
+
+After Python3 installation open a terminal and execute the following:
+<pre>
+sudo pip3 install pyzmq
+git clone https://github.com/zeromq/pyre.git
+git clone https://github.com/z25/pyZOCP.git
+cd pyZOCP/examples
+PYTHONPATH="../..:../src" python3 simple_node.py
+</pre>
