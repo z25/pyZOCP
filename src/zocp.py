@@ -54,7 +54,7 @@ def dict_get_keys(d, keylist=""):
             keylist = "%s.%s\n%s" %(keylist, k, keylist)
             #print(keylist)
     return keylist
-              
+
 # http://stackoverflow.com/questions/38987/how-can-i-merge-union-two-python-dictionaries-in-a-single-expression?rq=1
 def dict_merge(a, b, path=None):
     """
@@ -114,6 +114,37 @@ class ZOCP(Pyre):
         """
         return self.capability.get('_name')
 
+    def set_node_location(self, location=[0,0,0]):
+        """
+        Set node's location, overwites previous
+        """
+        self.capability['_location'] = location
+        self.on_modified()
+
+    def set_node_orientation(self, orientation=[0,0,0]):
+        """
+        Set node's name, overwites previous
+        """
+        self.capability['_orientation'] = location
+        self.on_modified()
+
+    def set_node_scale(self, scale=[0,0,0]):
+        """
+        Set node's name, overwites previous
+        """
+        self.capability['_scale'] = scale
+        self.on_modified()
+
+    def set_node_matrix(self, matrix=[[1,0,0,0],
+                                      [0,1,0,0],
+                                      [0,0,1,0],
+                                      [0,0,0,1]]):
+        """
+        Set node's matrix, overwites previous
+        """
+        self.capability['_matrix'] = matrix
+        self.on_modified()
+
     def register_int(self, name, int, access='r', min=None, max=None, step=None):
         """
         Register an integer variable
@@ -138,7 +169,7 @@ class ZOCP(Pyre):
     def register_float(self, name, flt, access='r', min=None, max=None, step=None):
         """
         Register a float variable
-        
+
         Arguments are:
         * name: the name of the variable as how nodes can refer to it
         * int: the variable
@@ -159,7 +190,7 @@ class ZOCP(Pyre):
     def register_percent(self, name, pct, access='r', min=None, max=None, step=None):
         """
         Register a percentage variable
-        
+
         Arguments are:
         * name: the name of the variable as how nodes can refer to it
         * int: the variable
@@ -180,7 +211,7 @@ class ZOCP(Pyre):
     def register_bool(self, name, bl, access='r'):
         """
         Register an integer variable
-        
+
         Arguments are:
         * name: the name of the variable as how nodes can refer to it
         * int: the variable
@@ -200,26 +231,89 @@ class ZOCP(Pyre):
         """
         self.capability[name] = {'value': s, 'typeHint': 'string', 'access':access }
         self.on_modified()
-        
+
+    def register_vec2f(self, name, vec2f, access='r', min=None, max=None, step=None):
+        """
+        Register a 2 dimensional vector variable
+
+        Arguments are:
+        * name: the name of the variable as how nodes can refer to it
+        * vec2f: A list containing two floats
+        * access: 'r' and/or 'w' as to if it's readable and writeable state
+        * min: minimal value
+        * max: maximal value
+        * step: step value used by increments and decrements
+        """
+        self.capability[name] = {'value': vec2f, 'typeHint': 'vec3f', 'access':access }
+        if min:
+            self.capability[name]['min'] = min
+        if max:
+            self.capability[name]['max'] = max
+        if step:
+            self.capability[name]['step'] = step
+        self.on_modified()
+
+    def register_vec3f(self, name, vec3f, access='r', min=None, max=None, step=None):
+        """
+        Register a three dimensional vector variable
+
+        Arguments are:
+        * name: the name of the variable as how nodes can refer to it
+        * vec3f: A list containing three floats
+        * access: 'r' and/or 'w' as to if it's readable and writeable state
+        * min: minimal value
+        * max: maximal value
+        * step: step value used by increments and decrements
+        """
+        self.capability[name] = {'value': vec3f, 'typeHint': 'vec3f', 'access':access }
+        if min:
+            self.capability[name]['min'] = min
+        if max:
+            self.capability[name]['max'] = max
+        if step:
+            self.capability[name]['step'] = step
+        self.on_modified()
+
+    def register_vec4f(self, name, vec4f, access='r', min=None, max=None, step=None):
+        """
+        Register a four dimensional vector variable
+
+        Arguments are:
+        * name: the name of the variable as how nodes can refer to it
+        * vec4f: A list containing four floats
+        * access: 'r' and/or 'w' as to if it's readable and writeable state
+        * min: minimal value
+        * max: maximal value
+        * step: step value used by increments and decrements
+        """
+        self.capability[name] = {'value': vec4f, 'typeHint': 'vec4f', 'access':access }
+        if min:
+            self.capability[name]['min'] = min
+        if max:
+            self.capability[name]['max'] = max
+        if step:
+            self.capability[name]['step'] = step
+        self.on_modified()
+
     #########################################
     # Node methods to peers
     #########################################
     def peer_get_capability(self, peer):
         """
         Get the capabilities of peer
-        
+
         Convenience method since it's the same a calling GET on a peer with no 
         data
         """
         self.peer_get(peer, None)
-    
+
     def peer_get(self, peer, keys):
         """
         Get items from peer
         """
         msg = json.dumps({'GET': keys})
         self.whisper(peer, msg.encode('utf-8'))
-        
+
     def peer_set(self, peer, data):
         """
         Set items on peer
@@ -233,7 +327,7 @@ class ZOCP(Pyre):
         """
         msg = json.dumps({'CALL': [method, args]})
         self.whisper(peer, msg.encode('utf-8'))
-        
+
     def peer_subscribe(self, peer, signal, sensor):
         """
         Subscribe a sensor to a signal
@@ -247,7 +341,7 @@ class ZOCP(Pyre):
         """
         msg = json.dumps({'SUB': [signal, sensor]})
         self.whisper(peer, msg.encode('utf-8'))
-    
+
     #########################################
     # Event methods. These can be overwritten
     #########################################
@@ -268,10 +362,10 @@ class ZOCP(Pyre):
 
     def on_peer_shout(self, peer, grp, *args, **kwargs):
         print("ZOCP SHOUT   : %s shouted in group %s: %s" %(peer.hex, grp, args))
-        
+
     def on_peer_modified(self, peer, *args, **kwargs):
         print("ZOCP MODIFIED: %s modified %s" %(peer.hex, args))
-     
+
     def on_modified(self):
         if self._running:
             self.shout("ZOCP", json.dumps({ 'MOD' :self.capability}).encode('utf-8'))
@@ -407,7 +501,7 @@ class ZOCP(Pyre):
     #    self.stop()
 
 if __name__ == '__main__':
-    
+
     z = ZOCP()
     z.set_node_name("ZOCP-Test")
     z.register_bool("zocpBool", True, 'rw')

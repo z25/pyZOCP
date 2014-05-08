@@ -84,7 +84,7 @@ def sendCameraSettings(camera):
 #             if not ( [angle, lx, ly]  == camSettings.get(obj.data.name)):
 #                 print("camera settings changed for %s", obj.name)
 #                 sendCameraSettings(obj.data)
-       
+
 def register():
     for obj in  bpy.context.scene.objects:
         if obj.type == 'MESH': # only send the object if it is a mesh or a Camera
