@@ -296,8 +296,8 @@ class ZOCP(Pyre):
             self.on_peer_enter(peer, msg)
             return
         if type == "EXIT":
-            self.peers.pop(peer)
             self.on_peer_exit(peer, msg)
+            self.peers.pop(peer)
             return
         if type == "JOIN":
             grp = msg.pop(0)
