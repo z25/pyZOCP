@@ -1,12 +1,13 @@
 import bpy
 import sys
-sys.path.append('/usr/local/lib/python3.3/dist-packages/pyzmq-13.1.0-py3.3-linux-x86_64.egg')
-sys.path.append('/home/arnaud/Documents/sphaero/zmq-test/pyZOCP/src')
-sys.path.append('/home/arnaud/Documents/sphaero/zmq-test/pyre')
-print(sys.path)
-
 import time
 import json
+sys.path.append('/usr/local/lib/python3.3/dist-packages/pyzmq-13.1.0-py3.3-linux-x86_64.egg')
+sys.path.append('/home/arnaud/Documents/sphaero/zmq-test/pyZOCP/src')
+sys.path.append('/home/arnaud/Documents/sphaero/zmq-test')
+print(sys.path)
+
+import zmq
 from zocp import ZOCP
 from mathutils import Vector
 from bpy.app.handlers import persistent
@@ -15,8 +16,6 @@ alreadyDeletedObjects = set()
 camSettings = {}
 mistSettings = ()
 
-z = ZOCP()
-z.set_node_name("Blender")
 
 #    Menu in UI region
 #
@@ -70,21 +69,21 @@ def sendCameraSettings(camera):
     
     camSettings[camera.name] = (angle, lx, ly)
      
-@persistent         
-def update_data(scene):
-    for obj in scene.objects:
-        if obj.type == 'MESH': # only send the object if it is a mesh or a Camera
-            z.capability[obj.name+".x"]['value'] = obj.location.x
-            z.capability[obj.name+".y"]['value'] = obj.location.y
-            z.capability[obj.name+".z"]['value'] = obj.location.z        
-            sendObjectData(obj)
-        elif obj.type == 'CAMERA':
-            angle = obj.data.angle
-            lx = obj.data.shift_x
-            ly = obj.data.shift_y
-            if not ( [angle, lx, ly]  == camSettings.get(obj.data.name)):
-                print("camera settings changed for %s", obj.name)
-                sendCameraSettings(obj.data)
+# @persistent         
+# def update_data(scene):
+#     for obj in scene.objects:
+#         if obj.type == 'MESH': # only send the object if it is a mesh or a Camera
+#             z.capability[obj.name+".x"]['value'] = obj.location.x
+#             z.capability[obj.name+".y"]['value'] = obj.location.y
+#             z.capability[obj.name+".z"]['value'] = obj.location.z        
+#             sendObjectData(obj)
+#         elif obj.type == 'CAMERA':
+#             angle = obj.data.angle
+#             lx = obj.data.shift_x
+#             ly = obj.data.shift_y
+#             if not ( [angle, lx, ly]  == camSettings.get(obj.data.name)):
+#                 print("camera settings changed for %s", obj.name)
+#                 sendCameraSettings(obj.data)
        
 def register():
     for obj in  bpy.context.scene.objects:
@@ -97,15 +96,117 @@ def register():
             z.register_float(obj.name+".shift_x", obj.data.shift_x, 'r')
             z.register_float(obj.name+".shift_y", obj.data.shift_y, 'r')
 
+class bpyZOCP(ZOCP):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.set_node_name("Blender" + bpy.app.version_string)
+        # register the poller
+        self.poller = zmq.Poller()
+        self.poller.register(self.get_socket(), zmq.POLLIN)
+
+    #########################################
+    # Event methods. These can be overwritten
+    #########################################
+    def on_peer_enter(self, peer, *args, **kwargs):
+        print("ZOCP ENTER   : %s" %(peer.hex))
+        # create an empty for peer
+        name = self.peers[peer].get("_name", peer.hex)
+        bpy.ops.object.empty_add(type="PLAIN_AXES")
+        bpy.context.object.name = name
+        # get projectors on peer
+        objects = self.peers[peer].get("objects", {})
+        for obj, data in objects.items():
+            if data.get("type", "") == "projector":
+                loc = data.get("location", (0,0,0))
+                ori = data.get("orientation", (0,0,0))
+                bpy.ops.object.camera_add(view_align=True,
+                                          enter_editmode=False,
+                                          location=loc,
+                                          rotation=ori,
+                                          layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False)
+                                          )
+                bpy.context.object.name = obj
+
+    def on_peer_exit(self, peer, *args, **kwargs):
+        print("ZOCP EXIT    : %s" %(peer.hex))
+        objects = self.peers[peer].get("objects", {})
+        for obj, data in objects.items():
+            bpy.ops.object.select_pattern(pattern=obj)
+            bpy.ops.object.delete()
+        # delete empty
+        name = self.peers[peer].get("_name", peer.hex)
+        bpy.ops.object.select_pattern(pattern=name)
+        bpy.ops.object.delete()
+
+    def on_peer_join(self, peer, grp, *args, **kwargs):
+        print("ZOCP JOIN    : %s joined group %s" %(peer.hex, grp))
+
+    def on_peer_leave(self, peer, grp, *args, **kwargs):
+        print("ZOCP LEAVE   : %s left group %s" %(peer.hex, grp))
+
+    def on_peer_whisper(self, peer, *args, **kwargs):
+        print("ZOCP WHISPER : %s whispered: %s" %(peer.hex, args))
+
+    def on_peer_shout(self, peer, grp, *args, **kwargs):
+        print("ZOCP SHOUT   : %s shouted in group %s: %s" %(peer.hex, grp, args))
+        
+    def on_peer_modified(self, peer, *args, **kwargs):
+        print("ZOCP MODIFIED: %s modified %s" %(peer.hex, args))
+
+    def run_once(self):
+        self._running = True
+        items = dict(self.poller.poll(1))
+        if self.get_socket() in items and items[self.get_socket()] == zmq.POLLIN:
+            print("boe")
+            self.get_message()
+    #except (KeyboardInterrupt, SystemExit):
+    #        self.stop()
+
+z = bpyZOCP(ctx=zmq.Context())
+z.set_node_name("Blender")
+
+compobj = {}
+
+for ob in bpy.data.objects:
+    compobj[ob.name] = ob.matrix_world.copy()
+
+# Needed for delaying 
+toffset = 1/10.0
+tstamp = time.time()
+
+@persistent
+def scene_update(context):
+    global toffset
+    global tstamp
+    # only once per 'toffset' seconds to lessen the burden
+    if time.time() > tstamp + 1/10.0:
+        tstamp = time.time()
+        z.run_once()
+        update_objects()
+    #else:
+    #    print("delayed", tstamp, time.time())
+
+@persistent
+def frame_update(context):
+    update_objects()
+
+def update_objects():
+    global compobj
+    if bpy.data.objects.is_updated:
+        for ob in bpy.data.objects:
+            if ob.is_updated and ob.matrix_world != compobj[ob.name]:
+                print("=>", ob.name, ob.matrix_world)
+                compobj[ob.name] = ob.matrix_world.copy()
+                sendObjectData(ob)
+
 #register cameras
-register()
+#register()
 bpy.utils.register_module(__name__)
+#bpy.app.handlers.scene_update_post.append(update_data)
+#bpy.app.handlers.frame_change_pre.clear()
+#bpy.app.handlers.frame_change_pre.append(update_data)
+bpy.app.handlers.scene_update_post.clear()
+bpy.app.handlers.scene_update_post.append(scene_update)
 bpy.app.handlers.frame_change_post.clear()
-bpy.app.handlers.frame_change_post.append(update_data)
-
-def run():
-    from threading import Thread
-    t = Thread(target=z.run)
-    t.start()
-
-run()
+bpy.app.handlers.frame_change_post.append(frame_update)
