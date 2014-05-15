@@ -24,3 +24,14 @@ git clone https://github.com/z25/pyZOCP.git
 cd pyZOCP/examples
 PYTHONPATH="../..:../src" python3 simple_node.py
 </pre>
+
+h2. Quick installation on Windows
+
+Install Python3, make sure it sets your PATH etc. Also make sure you get PIP.
+
+After Python3 installation open a terminal and execute the following:
+<pre>
+pip install pyzmq
+pip install https://github.com/zeromq/pyre/archive/master.zip
+pip install https://github.com/z25/pyZOCP/archive/master.zip
+</pre>
