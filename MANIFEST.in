@@ -1,0 +1,3 @@
+include LICENSE
+include README.textile
+include debug_toolbar_mongo/templates/*
