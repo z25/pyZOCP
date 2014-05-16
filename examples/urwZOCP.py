@@ -480,7 +480,7 @@ class urwZOCP(zocp.ZOCP):
             self.stop()
             raise urwid.ExitMainLoop()
         if key in ('q', 'Q'):
-            out.get_widget().set_text("")
+            self.out.get_widget().set_text("")
         if key in ('l', 'L'):
             listbox = urwid.Text('Boe')
             body = urwid.Text('Blaaa')
