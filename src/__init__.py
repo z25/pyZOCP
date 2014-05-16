@@ -1,3 +1,3 @@
 __all__ = ['zocp']
 
-from zocp import ZOCP
+from .zocp import ZOCP

@@ -6,8 +6,8 @@ setup(name='pyZOCP',
       author='Arnaud Loonstra',
       author_email='arnaud@sphaero.org',
       url='http://www.github.com/z25/pyZOCP/',
-      packages=['ZOCP'],
-      package_dir = {'ZOCP': 'src'},
+      packages=['zocp'],
+      package_dir = {'zocp': 'src'},
       include_package_data=True,
       requires=['pyre']
      )
