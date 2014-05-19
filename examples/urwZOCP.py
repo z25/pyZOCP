@@ -22,6 +22,7 @@ import io
 import zmq
 import time
 import zocp
+import errno
 
 # http://stackoverflow.com/questions/38987/how-can-i-merge-union-two-python-dictionaries-in-a-single-expression?rq=1
 def mergedicts(a, b, path=None):
@@ -96,10 +97,23 @@ class ZmqEventLoop(urwid.SelectEventLoop):
                     (self._alarms and timeout > 0)):
                 timeout = 0
                 tm = 'idle'
-            items = dict(self._zpoller.poll(timeout))
+            try:
+                items = dict(self._zpoller.poll(timeout))
+            except zmq.ZMQError as e:
+                if e.errno == errno.EINTR:
+                    items = {}
+                else:
+                    raise(e)
         else:
             tm = None
-            items = dict(self._zpoller.poll())
+            try:
+                items = dict(self._zpoller.poll())
+            except zmq.ZMQError as e:
+                if e.errno == errno.EINTR:
+                    items = {}
+                    pass
+                else:
+                    raise(e)
 
         if not items:
             if tm == 'idle':
@@ -481,13 +495,6 @@ class urwZOCP(zocp.ZOCP):
             raise urwid.ExitMainLoop()
         if key in ('q', 'Q'):
             self.out.get_widget().set_text("")
-        if key in ('l', 'L'):
-            listbox = urwid.Text('Boe')
-            body = urwid.Text('Blaaa')
-            ol = urwid.Overlay(listbox, body, 'center', 30, 'middle', 10)
-            #urwid.Overlay(top_w, bottom_w, align, width, valign, height, min_width=None, min_height=None, left=0, right=0, top=0, bottom=0)    
-            index = len(frame.contents)
-            frame.contents.insert(index, (ol, ('given', 30)))
         self.foot.original_widget.set_text("%s" %self.cells.focus.original_widget.node_id)
 
     #########################################
