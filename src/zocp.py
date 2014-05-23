@@ -349,25 +349,25 @@ class ZOCP(Pyre):
     # Event methods. These can be overwritten
     #########################################
     def on_peer_enter(self, peer, *args, **kwargs):
-        print("ZOCP ENTER   : %s" %(peer.hex))
+        print("ZOCP PEER ENTER   : %s" %(peer.hex))
 
     def on_peer_exit(self, peer, *args, **kwargs):
-        print("ZOCP EXIT    : %s" %(peer.hex))
+        print("ZOCP PEER EXIT    : %s" %(peer.hex))
 
     def on_peer_join(self, peer, grp, *args, **kwargs):
-        print("ZOCP JOIN    : %s joined group %s" %(peer.hex, grp))
+        print("ZOCP PEER JOIN    : %s joined group %s" %(peer.hex, grp))
 
     def on_peer_leave(self, peer, grp, *args, **kwargs):
-        print("ZOCP LEAVE   : %s left group %s" %(peer.hex, grp))
+        print("ZOCP PEER LEAVE   : %s left group %s" %(peer.hex, grp))
 
     def on_peer_whisper(self, peer, *args, **kwargs):
-        print("ZOCP WHISPER : %s whispered: %s" %(peer.hex, args))
+        print("ZOCP PEER WHISPER : %s whispered: %s" %(peer.hex, args))
 
     def on_peer_shout(self, peer, grp, *args, **kwargs):
-        print("ZOCP SHOUT   : %s shouted in group %s: %s" %(peer.hex, grp, args))
+        print("ZOCP PEER SHOUT   : %s shouted in group %s: %s" %(peer.hex, grp, args))
 
     def on_peer_modified(self, peer, *args, **kwargs):
-        print("ZOCP MODIFIED: %s modified %s" %(peer.hex, args))
+        print("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, args))
 
     def on_modified(self, data, peer=None):
         """
