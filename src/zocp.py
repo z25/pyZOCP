@@ -346,28 +346,43 @@ class ZOCP(Pyre):
         self.whisper(peer, msg.encode('utf-8'))
 
     #########################################
-    # Event methods. These can be overwritten
+    # ZRE event methods. These can be overwritten
     #########################################
     def on_peer_enter(self, peer, *args, **kwargs):
-        print("ZOCP PEER ENTER   : %s" %(peer.hex))
+        print("ZRE ENTER    : %s" %(peer.hex))
 
     def on_peer_exit(self, peer, *args, **kwargs):
-        print("ZOCP PEER EXIT    : %s" %(peer.hex))
+        print("ZRE EXIT     : %s" %(peer.hex))
 
     def on_peer_join(self, peer, grp, *args, **kwargs):
-        print("ZOCP PEER JOIN    : %s joined group %s" %(peer.hex, grp))
+        print("ZRE JOIN     : %s joined group %s" %(peer.hex, grp))
 
     def on_peer_leave(self, peer, grp, *args, **kwargs):
-        print("ZOCP PEER LEAVE   : %s left group %s" %(peer.hex, grp))
+        print("ZRE LEAVE    : %s left group %s" %(peer.hex, grp))
 
     def on_peer_whisper(self, peer, data, *args, **kwargs):
-        print("ZOCP PEER WHISPER : %s whispered: %s" %(peer.hex, data))
+        print("ZRE WHISPER  : %s whispered: %s" %(peer.hex, data))
 
     def on_peer_shout(self, peer, grp, data, *args, **kwargs):
-        print("ZOCP PEER SHOUT   : %s shouted in group %s: %s" %(peer.hex, grp, data))
+        print("ZRE SHOUT    : %s shouted in group %s: %s" %(peer.hex, grp, data))
+
+    #########################################
+    # ZOCP event methods. These can be overwritten
+    #########################################
+    #def on_get(self, peer, req):
+    #def on_set(self, peer, data):
+    #def on_call(self, peer, req):
+    #def on_subscribe(self, peer, src, dst):
+    #def on_unsubscribe(self, peer, src, dst):
 
     def on_peer_modified(self, peer, data, *args, **kwargs):
         print("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
+
+    def on_peer_replied(self, peer, data, *args, **kwargs):
+        print("ZOCP PEER REPLIED : %s modified %s" %(peer.hex, data))
+
+    def on_peer_signaled(self, peer, data, *args, **kwargs):
+        print("ZOCP PEER SIGNALED: %s modified %s" %(peer.hex, data))
 
     def on_modified(self, data, peer=None):
         """
@@ -377,9 +392,9 @@ class ZOCP(Pyre):
         peer: id of peer who made the change
         """
         if peer:
-            print("Modified by %s with %s" %(peer.hex, data))
+            print("ZOCP modified by %s with %s" %(peer.hex, data))
         else:
-            print("Modified by %s with %s" %("self", data))
+            print("ZOCP modified by %s with %s" %("self", data))
         if self._running:
             self.shout("ZOCP", json.dumps({ 'MOD' :self.capability}).encode('utf-8'))
 
