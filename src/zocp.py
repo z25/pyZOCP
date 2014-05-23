@@ -96,7 +96,7 @@ class ZOCP(Pyre):
         Set node's capability, overwites previous
         """
         self.capability = cap
-        self.on_modified()
+        self.on_modified(data=cap)
 
     def get_capability(self):
         """
@@ -109,7 +109,7 @@ class ZOCP(Pyre):
         Set node's name, overwites previous
         """
         self.capability['_name'] = name
-        self.on_modified()
+        self.on_modified(data={'_name': name})
 
     def get_node_name(self, name):
         """
@@ -122,21 +122,21 @@ class ZOCP(Pyre):
         Set node's location, overwites previous
         """
         self.capability['_location'] = location
-        self.on_modified()
+        self.on_modified(data={'_location': location})
 
     def set_node_orientation(self, orientation=[0,0,0]):
         """
         Set node's name, overwites previous
         """
-        self.capability['_orientation'] = location
-        self.on_modified()
+        self.capability['_orientation'] = orientation
+        self.on_modified(data={'_orientation': orientation})
 
     def set_node_scale(self, scale=[0,0,0]):
         """
         Set node's name, overwites previous
         """
         self.capability['_scale'] = scale
-        self.on_modified()
+        self.on_modified(data={'scale': scale})
 
     def set_node_matrix(self, matrix=[[1,0,0,0],
                                       [0,1,0,0],
@@ -146,7 +146,7 @@ class ZOCP(Pyre):
         Set node's matrix, overwites previous
         """
         self.capability['_matrix'] = matrix
-        self.on_modified()
+        self.on_modified(data={'_matrix':matrix})
 
     def register_int(self, name, int, access='r', min=None, max=None, step=None):
         """
@@ -167,7 +167,7 @@ class ZOCP(Pyre):
             self.capability[name]['max'] = max
         if step:
             self.capability[name]['step'] = step
-        self.on_modified()
+        self.on_modified(data={'name': self.capability[name]})
 
     def register_float(self, name, flt, access='r', min=None, max=None, step=None):
         """
@@ -188,7 +188,7 @@ class ZOCP(Pyre):
             self.capability[name]['max'] = max
         if step:
             self.capability[name]['step'] = step
-        self.on_modified()
+        self.on_modified(data={'name': self.capability[name]})
 
     def register_percent(self, name, pct, access='r', min=None, max=None, step=None):
         """
@@ -209,7 +209,7 @@ class ZOCP(Pyre):
             self.capability[name]['max'] = max
         if step:
             self.capability[name]['step'] = step
-        self.on_modified()
+        self.on_modified(data={'name': self.capability[name]})
 
     def register_bool(self, name, bl, access='r'):
         """
@@ -221,7 +221,7 @@ class ZOCP(Pyre):
         * access: 'r' and/or 'w' as to if it's readable and writeable state
         """
         self.capability[name] = {'value': bl, 'typeHint': 'bool', 'access':access }
-        self.on_modified()
+        self.on_modified(data={'name': self.capability[name]})
 
     def register_string(self, name, s, access='r'):
         """
@@ -233,7 +233,7 @@ class ZOCP(Pyre):
         * access: 'r' and/or 'w' as to if it's readable and writeable state
         """
         self.capability[name] = {'value': s, 'typeHint': 'string', 'access':access }
-        self.on_modified()
+        self.on_modified(data={'name': self.capability[name]})
 
     def register_vec2f(self, name, vec2f, access='r', min=None, max=None, step=None):
         """
@@ -254,7 +254,7 @@ class ZOCP(Pyre):
             self.capability[name]['max'] = max
         if step:
             self.capability[name]['step'] = step
-        self.on_modified()
+        self.on_modified(data={'name': self.capability[name]})
 
     def register_vec3f(self, name, vec3f, access='r', min=None, max=None, step=None):
         """
@@ -275,7 +275,7 @@ class ZOCP(Pyre):
             self.capability[name]['max'] = max
         if step:
             self.capability[name]['step'] = step
-        self.on_modified()
+        self.on_modified(data={'name': self.capability[name]})
 
     def register_vec4f(self, name, vec4f, access='r', min=None, max=None, step=None):
         """
@@ -296,7 +296,7 @@ class ZOCP(Pyre):
             self.capability[name]['max'] = max
         if step:
             self.capability[name]['step'] = step
-        self.on_modified()
+        self.on_modified(data={'name': self.capability[name]})
 
     #########################################
     # Node methods to peers
@@ -321,7 +321,7 @@ class ZOCP(Pyre):
         """
         Set items on peer
         """
-        msg = json.dumps({'SET': keys})
+        msg = json.dumps({'SET': data})
         self.whisper(peer, msg.encode('utf-8'))
 
     def peer_call(self, peer, method, *args):
@@ -346,30 +346,55 @@ class ZOCP(Pyre):
         self.whisper(peer, msg.encode('utf-8'))
 
     #########################################
-    # Event methods. These can be overwritten
+    # ZRE event methods. These can be overwritten
     #########################################
     def on_peer_enter(self, peer, *args, **kwargs):
-        print("ZOCP ENTER   : %s" %(peer.hex))
+        print("ZRE ENTER    : %s" %(peer.hex))
 
     def on_peer_exit(self, peer, *args, **kwargs):
-        print("ZOCP EXIT    : %s" %(peer.hex))
+        print("ZRE EXIT     : %s" %(peer.hex))
 
     def on_peer_join(self, peer, grp, *args, **kwargs):
-        print("ZOCP JOIN    : %s joined group %s" %(peer.hex, grp))
+        print("ZRE JOIN     : %s joined group %s" %(peer.hex, grp))
 
     def on_peer_leave(self, peer, grp, *args, **kwargs):
-        print("ZOCP LEAVE   : %s left group %s" %(peer.hex, grp))
+        print("ZRE LEAVE    : %s left group %s" %(peer.hex, grp))
 
-    def on_peer_whisper(self, peer, *args, **kwargs):
-        print("ZOCP WHISPER : %s whispered: %s" %(peer.hex, args))
+    def on_peer_whisper(self, peer, data, *args, **kwargs):
+        print("ZRE WHISPER  : %s whispered: %s" %(peer.hex, data))
 
-    def on_peer_shout(self, peer, grp, *args, **kwargs):
-        print("ZOCP SHOUT   : %s shouted in group %s: %s" %(peer.hex, grp, args))
+    def on_peer_shout(self, peer, grp, data, *args, **kwargs):
+        print("ZRE SHOUT    : %s shouted in group %s: %s" %(peer.hex, grp, data))
 
-    def on_peer_modified(self, peer, *args, **kwargs):
-        print("ZOCP MODIFIED: %s modified %s" %(peer.hex, args))
+    #########################################
+    # ZOCP event methods. These can be overwritten
+    #########################################
+    #def on_get(self, peer, req):
+    #def on_set(self, peer, data):
+    #def on_call(self, peer, req):
+    #def on_subscribe(self, peer, src, dst):
+    #def on_unsubscribe(self, peer, src, dst):
 
-    def on_modified(self):
+    def on_peer_modified(self, peer, data, *args, **kwargs):
+        print("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
+
+    def on_peer_replied(self, peer, data, *args, **kwargs):
+        print("ZOCP PEER REPLIED : %s modified %s" %(peer.hex, data))
+
+    def on_peer_signaled(self, peer, data, *args, **kwargs):
+        print("ZOCP PEER SIGNALED: %s modified %s" %(peer.hex, data))
+
+    def on_modified(self, data, peer=None):
+        """
+        Called when some data is modified on this node.
+
+        data: changed data
+        peer: id of peer who made the change
+        """
+        if peer:
+            print("ZOCP modified by %s with %s" %(peer.hex, data))
+        else:
+            print("ZOCP modified by %s with %s" %("self", data))
         if self._running:
             self.shout("ZOCP", json.dumps({ 'MOD' :self.capability}).encode('utf-8'))
 
@@ -461,7 +486,7 @@ class ZOCP(Pyre):
 
     def _handle_SET(self, data, peer, grp):
         self.capability = dict_merge(self.capability, data)
-        self.on_modified()
+        self.on_modified(data, peer)
 
     def _handle_CALL(self, data, peer, grp):
         return
@@ -470,12 +495,12 @@ class ZOCP(Pyre):
     def _handle_SUB(self, data, peer, grp):
         return
         self.capability = dict_merge(self.capability, data)
-        self.on_modified()
+        self.on_modified(data, peer)
 
     def _handle_UNSUB(self, data, peer, grp):
         return
         self.capability = dict_merge(self.capability, data)
-        self.on_modified()
+        self.on_modified(data, peer)
 
     def _handle_REP(self, data, peer, grp):
         return
