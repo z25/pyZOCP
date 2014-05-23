@@ -321,7 +321,7 @@ class ZOCP(Pyre):
         """
         Set items on peer
         """
-        msg = json.dumps({'SET': keys})
+        msg = json.dumps({'SET': data})
         self.whisper(peer, msg.encode('utf-8'))
 
     def peer_call(self, peer, method, *args):
@@ -360,14 +360,14 @@ class ZOCP(Pyre):
     def on_peer_leave(self, peer, grp, *args, **kwargs):
         print("ZOCP PEER LEAVE   : %s left group %s" %(peer.hex, grp))
 
-    def on_peer_whisper(self, peer, *args, **kwargs):
-        print("ZOCP PEER WHISPER : %s whispered: %s" %(peer.hex, args))
+    def on_peer_whisper(self, peer, data, *args, **kwargs):
+        print("ZOCP PEER WHISPER : %s whispered: %s" %(peer.hex, data))
 
-    def on_peer_shout(self, peer, grp, *args, **kwargs):
-        print("ZOCP PEER SHOUT   : %s shouted in group %s: %s" %(peer.hex, grp, args))
+    def on_peer_shout(self, peer, grp, data, *args, **kwargs):
+        print("ZOCP PEER SHOUT   : %s shouted in group %s: %s" %(peer.hex, grp, data))
 
-    def on_peer_modified(self, peer, *args, **kwargs):
-        print("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, args))
+    def on_peer_modified(self, peer, data, *args, **kwargs):
+        print("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
 
     def on_modified(self, data, peer=None):
         """
