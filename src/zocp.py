@@ -83,6 +83,9 @@ class ZOCP(Pyre):
         self._running = False
         # We always join the ZOCP group
         self.join("ZOCP")
+        self.poller = zmq.Poller()
+        self.poller.register(self.get_socket(), zmq.POLLIN)
+
         #self.run()
 
     #########################################
@@ -484,13 +487,32 @@ class ZOCP(Pyre):
     def _handle_SIG(self, data, peer, grp):
         return
 
-    def run(self):
-        poller = zmq.Poller()
-        poller.register(self.get_socket(), zmq.POLLIN)
+    def run_once(self, timeout=None):
+        """
+        Run one iteration of getting ZOCP events
+
+        If timeout is None it will block until an
+        event has been received. If 0 it will return instantly
+
+        The timeout is in milliseconds
+        """
+        self._running = True
+        items = dict(self.poller.poll(timeout))
+        while(len(items) > 0):
+            for fd, ev in items.items():
+                if self.get_socket() == fd and ev == zmq.POLLIN:
+                    self.get_message()
+            # just q quick query
+            items = dict(self.poller.poll(0))
+
+    def run(self, timeout=None):
+        """
+        Run the ZOCP loop indefinitely
+        """
         self._running = True
         while(self._running):
             try:
-                items = dict(poller.poll())
+                items = dict(self.poller.poll(timeout))
                 if self.get_socket() in items and items[self.get_socket()] == zmq.POLLIN:
                     self.get_message()
             except (KeyboardInterrupt, SystemExit):
