@@ -2,12 +2,9 @@ import bpy
 import sys
 import time
 import json
-sys.path.append('/usr/local/lib/python3.3/dist-packages/pyzmq-13.1.0-py3.3-linux-x86_64.egg')
-sys.path.append('/home/arnaud/Documents/sphaero/zmq-test/pyZOCP/src')
-sys.path.append('/home/arnaud/Documents/sphaero/zmq-test')
-print(sys.path)
-
+import socket
 import zmq
+
 from zocp import ZOCP
 from mathutils import Vector
 from bpy.app.handlers import persistent
@@ -55,6 +52,7 @@ def sendCameraSettings(camera):
     lx = camera.shift_x
     ly = camera.shift_y
     print("sending new camera settings for %s" %camera.name)
+
     z.shout("ZOCP", json.dumps({ 
                         "MOD": 
                         { 
@@ -100,7 +98,7 @@ class bpyZOCP(ZOCP):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.set_node_name("Blender" + bpy.app.version_string)
+        self.set_node_name("Blender@" + socket.gethostname() + ":" + bpy.app.version_string)
         # register the poller
         self.poller = zmq.Poller()
         self.poller.register(self.get_socket(), zmq.POLLIN)
@@ -154,25 +152,17 @@ class bpyZOCP(ZOCP):
     def on_peer_modified(self, peer, *args, **kwargs):
         print("ZOCP MODIFIED: %s modified %s" %(peer.hex, args))
 
-    def run_once(self):
-        self._running = True
-        items = dict(self.poller.poll(1))
-        if self.get_socket() in items and items[self.get_socket()] == zmq.POLLIN:
-            print("boe")
-            self.get_message()
     #except (KeyboardInterrupt, SystemExit):
     #        self.stop()
 
 z = bpyZOCP(ctx=zmq.Context())
-z.set_node_name("Blender")
 
 compobj = {}
-
 for ob in bpy.data.objects:
     compobj[ob.name] = ob.matrix_world.copy()
 
 # Needed for delaying 
-toffset = 1/10.0
+toffset = 1/30.0
 tstamp = time.time()
 
 @persistent
@@ -180,9 +170,9 @@ def scene_update(context):
     global toffset
     global tstamp
     # only once per 'toffset' seconds to lessen the burden
-    if time.time() > tstamp + 1/10.0:
+    if time.time() > tstamp + toffset:
         tstamp = time.time()
-        z.run_once()
+        z.run_once(timeout=0)
         update_objects()
     #else:
     #    print("delayed", tstamp, time.time())
