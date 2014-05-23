@@ -152,13 +152,6 @@ class bpyZOCP(ZOCP):
     def on_peer_modified(self, peer, *args, **kwargs):
         print("ZOCP MODIFIED: %s modified %s" %(peer.hex, args))
 
-    def run_once(self):
-        self._running = True
-        items = dict(self.poller.poll(1))
-        for fd, ev in items.items():
-            if self.get_socket() == fd and ev == zmq.POLLIN:
-                self.get_message()
-
     #except (KeyboardInterrupt, SystemExit):
     #        self.stop()
 
@@ -169,7 +162,7 @@ for ob in bpy.data.objects:
     compobj[ob.name] = ob.matrix_world.copy()
 
 # Needed for delaying 
-toffset = 1/10.0
+toffset = 1/30.0
 tstamp = time.time()
 
 @persistent
@@ -177,9 +170,9 @@ def scene_update(context):
     global toffset
     global tstamp
     # only once per 'toffset' seconds to lessen the burden
-    if time.time() > tstamp + 1/10.0:
+    if time.time() > tstamp + toffset:
         tstamp = time.time()
-        z.run_once()
+        z.run_once(timeout=0)
         update_objects()
     #else:
     #    print("delayed", tstamp, time.time())
