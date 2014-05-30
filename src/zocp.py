@@ -150,7 +150,7 @@ class ZOCP(Pyre):
         self.capability['_matrix'] = matrix
         self._on_modified(data={'_matrix':matrix})
 
-    def set_object(self, name=None, type):
+    def set_object(self, name=None, type="Unknown"):
         """
         Create a new object on this nodes capability
         """
@@ -537,7 +537,7 @@ class ZOCP(Pyre):
                 new_data[key] = data
                 data = new_data
             data = self._cur_obj_keys
-        self.on_modified(self, data, peer)
+        self.on_modified(data, peer)
         if self._running:
             self.shout("ZOCP", json.dumps({ 'MOD' :self.capability}).encode('utf-8'))
 
