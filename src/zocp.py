@@ -39,7 +39,7 @@ def dict_set(d, keys, value):
 
     raises a KeyError exception if failed
     """
-    for key in keys[:-1]: 
+    for key in keys[:-1]:
         d = d[key]
     d[keys[-1]] = value
 
@@ -80,6 +80,8 @@ class ZOCP(Pyre):
         self.peers = {} # id : capability data
         self.name = capability.get('_name')
         self.capability = capability
+        self._cur_obj = self.capability
+        self._cur_obj_keys = ()
         self._running = False
         # We always join the ZOCP group
         self.join("ZOCP")
@@ -96,7 +98,7 @@ class ZOCP(Pyre):
         Set node's capability, overwites previous
         """
         self.capability = cap
-        self.on_modified(data=cap)
+        self._on_modified(data=cap)
 
     def get_capability(self):
         """
@@ -109,7 +111,7 @@ class ZOCP(Pyre):
         Set node's name, overwites previous
         """
         self.capability['_name'] = name
-        self.on_modified(data={'_name': name})
+        self._on_modified(data={'_name': name})
 
     def get_node_name(self, name):
         """
@@ -122,21 +124,21 @@ class ZOCP(Pyre):
         Set node's location, overwites previous
         """
         self.capability['_location'] = location
-        self.on_modified(data={'_location': location})
+        self._on_modified(data={'_location': location})
 
     def set_node_orientation(self, orientation=[0,0,0]):
         """
         Set node's name, overwites previous
         """
         self.capability['_orientation'] = orientation
-        self.on_modified(data={'_orientation': orientation})
+        self._on_modified(data={'_orientation': orientation})
 
     def set_node_scale(self, scale=[0,0,0]):
         """
         Set node's name, overwites previous
         """
         self.capability['_scale'] = scale
-        self.on_modified(data={'scale': scale})
+        self._on_modified(data={'scale': scale})
 
     def set_node_matrix(self, matrix=[[1,0,0,0],
                                       [0,1,0,0],
@@ -146,7 +148,23 @@ class ZOCP(Pyre):
         Set node's matrix, overwites previous
         """
         self.capability['_matrix'] = matrix
-        self.on_modified(data={'_matrix':matrix})
+        self._on_modified(data={'_matrix':matrix})
+
+    def set_object(self, name=None, type="Unknown"):
+        """
+        Create a new object on this nodes capability
+        """
+        if name == None:
+            self._cur_obj = self.capability
+            self._cur_obj_keys = ()
+        if not self.capability.get('objects'):
+            self.capability['objects'] = {name: {'type': type}}
+        elif not self.capability['objects'].get(name):
+            self.capability['objects'][name] = {'type': type}
+        else:
+            self.capability['objects'][name]['type'] = type
+        self._cur_obj = self.capability['objects'][name]
+        self._cur_obj_keys = ('objects', name)
 
     def register_int(self, name, int, access='r', min=None, max=None, step=None):
         """
@@ -160,14 +178,14 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self.capability[name] = {'value': int, 'typeHint': 'int', 'access':access }
+        self._cur_obj[name] = {'value': int, 'typeHint': 'int', 'access':access }
         if min:
-            self.capability[name]['min'] = min
+            self._cur_obj[name]['min'] = min
         if max:
-            self.capability[name]['max'] = max
+            self._cur_obj[name]['max'] = max
         if step:
-            self.capability[name]['step'] = step
-        self.on_modified(data={'name': self.capability[name]})
+            self._cur_obj[name]['step'] = step
+        self._on_modified(data={'name': self._cur_obj[name]})
 
     def register_float(self, name, flt, access='r', min=None, max=None, step=None):
         """
@@ -181,14 +199,14 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self.capability[name] = {'value': flt, 'typeHint': 'float', 'access':access }
+        self._cur_obj[name] = {'value': flt, 'typeHint': 'float', 'access':access }
         if min:
-            self.capability[name]['min'] = min
+            self._cur_obj[name]['min'] = min
         if max:
-            self.capability[name]['max'] = max
+            self._cur_obj[name]['max'] = max
         if step:
-            self.capability[name]['step'] = step
-        self.on_modified(data={'name': self.capability[name]})
+            self._cur_obj[name]['step'] = step
+        self._on_modified(data={'name': self._cur_obj[name]})
 
     def register_percent(self, name, pct, access='r', min=None, max=None, step=None):
         """
@@ -202,14 +220,14 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self.capability[name] = {'value': pct, 'typeHint': 'percent', 'access':access }
+        self._cur_obj[name] = {'value': pct, 'typeHint': 'percent', 'access':access }
         if min:
-            self.capability[name]['min'] = min
+            self._cur_obj[name]['min'] = min
         if max:
-            self.capability[name]['max'] = max
+            self._cur_obj[name]['max'] = max
         if step:
-            self.capability[name]['step'] = step
-        self.on_modified(data={'name': self.capability[name]})
+            self._cur_obj[name]['step'] = step
+        self._on_modified(data={'name': self._cur_obj[name]})
 
     def register_bool(self, name, bl, access='r'):
         """
@@ -220,8 +238,8 @@ class ZOCP(Pyre):
         * int: the variable
         * access: 'r' and/or 'w' as to if it's readable and writeable state
         """
-        self.capability[name] = {'value': bl, 'typeHint': 'bool', 'access':access }
-        self.on_modified(data={'name': self.capability[name]})
+        self._cur_obj[name] = {'value': bl, 'typeHint': 'bool', 'access':access }
+        self._on_modified(data={'name': self._cur_obj[name]})
 
     def register_string(self, name, s, access='r'):
         """
@@ -232,8 +250,8 @@ class ZOCP(Pyre):
         * s: the variable
         * access: 'r' and/or 'w' as to if it's readable and writeable state
         """
-        self.capability[name] = {'value': s, 'typeHint': 'string', 'access':access }
-        self.on_modified(data={'name': self.capability[name]})
+        self._cur_obj[name] = {'value': s, 'typeHint': 'string', 'access':access }
+        self._on_modified(data={'name': self._cur_obj[name]})
 
     def register_vec2f(self, name, vec2f, access='r', min=None, max=None, step=None):
         """
@@ -247,14 +265,14 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self.capability[name] = {'value': vec2f, 'typeHint': 'vec3f', 'access':access }
+        self._cur_obj[name] = {'value': vec2f, 'typeHint': 'vec3f', 'access':access }
         if min:
-            self.capability[name]['min'] = min
+            self._cur_obj[name]['min'] = min
         if max:
-            self.capability[name]['max'] = max
+            self._cur_obj[name]['max'] = max
         if step:
-            self.capability[name]['step'] = step
-        self.on_modified(data={'name': self.capability[name]})
+            self._cur_obj[name]['step'] = step
+        self._on_modified(data={'name': self._cur_obj[name]})
 
     def register_vec3f(self, name, vec3f, access='r', min=None, max=None, step=None):
         """
@@ -268,14 +286,14 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self.capability[name] = {'value': vec3f, 'typeHint': 'vec3f', 'access':access }
+        self._cur_obj[name] = {'value': vec3f, 'typeHint': 'vec3f', 'access':access }
         if min:
-            self.capability[name]['min'] = min
+            self._cur_obj[name]['min'] = min
         if max:
-            self.capability[name]['max'] = max
+            self._cur_obj[name]['max'] = max
         if step:
-            self.capability[name]['step'] = step
-        self.on_modified(data={'name': self.capability[name]})
+            self._cur_obj[name]['step'] = step
+        self._on_modified(data={'name': self._cur_obj[name]})
 
     def register_vec4f(self, name, vec4f, access='r', min=None, max=None, step=None):
         """
@@ -289,14 +307,14 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self.capability[name] = {'value': vec4f, 'typeHint': 'vec4f', 'access':access }
+        self._cur_obj[name] = {'value': vec4f, 'typeHint': 'vec4f', 'access':access }
         if min:
-            self.capability[name]['min'] = min
+            self._cur_obj[name]['min'] = min
         if max:
-            self.capability[name]['max'] = max
+            self._cur_obj[name]['max'] = max
         if step:
-            self.capability[name]['step'] = step
-        self.on_modified(data={'name': self.capability[name]})
+            self._cur_obj[name]['step'] = step
+        if self._running: self.on_modified(data={'name': self.capability[name]})
 
     #########################################
     # Node methods to peers
@@ -395,8 +413,6 @@ class ZOCP(Pyre):
             print("ZOCP modified by %s with %s" %(peer.hex, data))
         else:
             print("ZOCP modified by %s with %s" %("self", data))
-        if self._running:
-            self.shout("ZOCP", json.dumps({ 'MOD' :self.capability}).encode('utf-8'))
 
     #########################################
     # Internal methods
@@ -511,6 +527,19 @@ class ZOCP(Pyre):
 
     def _handle_SIG(self, data, peer, grp):
         return
+
+    def _on_modified(self, data, peer=None):
+        if self._cur_obj_keys:
+            # the last key in the _cur_obj_keys list equals 
+            # the first in data so skip the last key
+            for key in self._cur_obj_keys[-2::-1]:
+                new_data = {}
+                new_data[key] = data
+                data = new_data
+            data = self._cur_obj_keys
+        self.on_modified(data, peer)
+        if self._running:
+            self.shout("ZOCP", json.dumps({ 'MOD' :self.capability}).encode('utf-8'))
 
     def run_once(self, timeout=None):
         """
