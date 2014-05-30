@@ -522,7 +522,7 @@ class urwZOCP(zocp.ZOCP):
         #self.cells.update();
 
     def on_peer_modified(self, peer, data, *args, **kwargs):
-        print("ZOCP MODIFIED: %s modified %s" %(peer.hex, args))
+        print("ZOCP MODIFIED: %s modified %s" %(peer.hex, data))
         nd = self.znodes.get(peer)
         if nd:
             nd[0].original_widget.update(self.peers.get(peer, {}))
