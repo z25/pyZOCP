@@ -185,7 +185,7 @@ class ZOCP(Pyre):
             self._cur_obj[name]['max'] = max
         if step:
             self._cur_obj[name]['step'] = step
-        self._on_modified(data={'name': self._cur_obj[name]})
+        self._on_modified(data={name: self._cur_obj[name]})
 
     def register_float(self, name, flt, access='r', min=None, max=None, step=None):
         """
@@ -206,7 +206,7 @@ class ZOCP(Pyre):
             self._cur_obj[name]['max'] = max
         if step:
             self._cur_obj[name]['step'] = step
-        self._on_modified(data={'name': self._cur_obj[name]})
+        self._on_modified(data={name: self._cur_obj[name]})
 
     def register_percent(self, name, pct, access='r', min=None, max=None, step=None):
         """
@@ -227,7 +227,7 @@ class ZOCP(Pyre):
             self._cur_obj[name]['max'] = max
         if step:
             self._cur_obj[name]['step'] = step
-        self._on_modified(data={'name': self._cur_obj[name]})
+        self._on_modified(data={name: self._cur_obj[name]})
 
     def register_bool(self, name, bl, access='r'):
         """
@@ -239,7 +239,7 @@ class ZOCP(Pyre):
         * access: 'r' and/or 'w' as to if it's readable and writeable state
         """
         self._cur_obj[name] = {'value': bl, 'typeHint': 'bool', 'access':access }
-        self._on_modified(data={'name': self._cur_obj[name]})
+        self._on_modified(data={name: self._cur_obj[name]})
 
     def register_string(self, name, s, access='r'):
         """
@@ -251,7 +251,7 @@ class ZOCP(Pyre):
         * access: 'r' and/or 'w' as to if it's readable and writeable state
         """
         self._cur_obj[name] = {'value': s, 'typeHint': 'string', 'access':access }
-        self._on_modified(data={'name': self._cur_obj[name]})
+        self._on_modified(data={name: self._cur_obj[name]})
 
     def register_vec2f(self, name, vec2f, access='r', min=None, max=None, step=None):
         """
@@ -272,7 +272,7 @@ class ZOCP(Pyre):
             self._cur_obj[name]['max'] = max
         if step:
             self._cur_obj[name]['step'] = step
-        self._on_modified(data={'name': self._cur_obj[name]})
+        self._on_modified(data={name: self._cur_obj[name]})
 
     def register_vec3f(self, name, vec3f, access='r', min=None, max=None, step=None):
         """
@@ -293,7 +293,7 @@ class ZOCP(Pyre):
             self._cur_obj[name]['max'] = max
         if step:
             self._cur_obj[name]['step'] = step
-        self._on_modified(data={'name': self._cur_obj[name]})
+        self._on_modified(data={name: self._cur_obj[name]})
 
     def register_vec4f(self, name, vec4f, access='r', min=None, max=None, step=None):
         """
@@ -314,7 +314,7 @@ class ZOCP(Pyre):
             self._cur_obj[name]['max'] = max
         if step:
             self._cur_obj[name]['step'] = step
-        if self._running: self.on_modified(data={'name': self.capability[name]})
+        if self._running: self.on_modified(data={name: self.capability[name]})
 
     #########################################
     # Node methods to peers
