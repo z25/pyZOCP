@@ -505,7 +505,7 @@ class urwZOCP(zocp.ZOCP):
         nd = self.znodes.get(peer)
         if not nd:
             #raise Exception("bla", self.peers)
-            
+
             nd = ZOCPNodeWidget(self.peers[peer], peer)
             self.znodes[peer] = (urwid.AttrMap(nd, 'options', focus_map), self.cells.options('given', 20))
             #index = len(cells.contents)
@@ -521,20 +521,8 @@ class urwZOCP(zocp.ZOCP):
                 self.cells.contents.append(val)
         #self.cells.update();
 
-    def on_peer_join(self, peer, grp, *args, **kwargs):
-        print("ZOCP JOIN    : %s joined group %s" %(peer.hex, grp))
-
-    def on_peer_leave(self, peer, grp, *args, **kwargs):
-        print("ZOCP LEAVE   : %s left group %s" %(peer.hex, grp))
-
-    def on_peer_whisper(self, peer, *args, **kwargs):
-        print("ZOCP WHISPER : %s whispered: %s" %(peer.hex, args))
-
-    def on_peer_shout(self, peer, grp, *args, **kwargs):
-        print("ZOCP SHOUT   : %s shouted in group %s: %s" %(peer.hex, grp, args))
-
-    def on_peer_modified(self, peer, *args, **kwargs):
-        print("ZOCP MODIFIED: %s modified %s" %(peer.hex, args))
+    def on_peer_modified(self, peer, data, *args, **kwargs):
+        print("ZOCP MODIFIED: %s modified %s" %(peer.hex, data))
         nd = self.znodes.get(peer)
         if nd:
             nd[0].original_widget.update(self.peers.get(peer, {}))
