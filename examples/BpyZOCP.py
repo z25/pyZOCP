@@ -94,14 +94,54 @@ def register():
             z.register_float(obj.name+".shift_x", obj.data.shift_x, 'r')
             z.register_float(obj.name+".shift_y", obj.data.shift_y, 'r')
 
-class bpyZOCP(ZOCP):
+class BpyZOCP(ZOCP):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_node_name("Blender@" + socket.gethostname() + ":" + bpy.app.version_string)
-        # register the poller
-        self.poller = zmq.Poller()
-        self.poller.register(self.get_socket(), zmq.POLLIN)
+        self._register_objects()
+
+    def _register_objects(self):
+        for obj in bpy.context.scene.objects:
+            print(obj.name)
+            if obj.type in ['MESH', 'CAMERA', 'LAMP']:
+                if obj.type == "LAMP":
+                    self._register_lamp(obj)
+                elif obj.type == "CAMERA":
+                    self._register_camera(obj)
+                else:
+                    self._register_mesh(obj)
+
+    def _register_lamp(self, obj):
+        self.set_object(obj.name, "BPY_Lamp")
+        self.register_vec3f("location",           obj.location[:])
+        #self.register_mat3f("worldOrientation",   obj.worldOrientation[:])
+        self.register_vec3f("orientation",        obj.rotation_euler[:])
+        self.register_vec3f("scale",              obj.scale[:])
+        self.register_bool ("visible",            obj.hide)
+        self.register_vec3f("color",              obj.color[:])
+        #self.register_int  ("state",              obj.state)
+        #self.register_float("mass",               obj.mass)
+
+    def _register_camera(self, obj):
+        self.set_object(obj.name, "BPY_Camera")
+        self.register_vec3f("location",           obj.location[:])
+        #self.register_mat3f("worldOrientation",   obj.worldOrientation[:])
+        self.register_vec3f("orientation",        obj.rotation_euler[:])
+        self.register_float("angle",              obj.data.angle, 'r')
+        self.register_float("shift_x",            obj.data.shift_x, 'r')
+        self.register_float("shift_y",            obj.data.shift_y, 'r')
+
+    def _register_mesh(self, obj):
+        self.set_object(obj.name, "BPY_Mesh")
+        self.register_vec3f("location",           obj.location[:])
+        #self.register_mat3f("worldOrientation",   obj.worldOrientation[:])
+        self.register_vec3f("orientation",        obj.rotation_euler[:])
+        self.register_vec3f("scale",              obj.scale[:])
+        self.register_bool ("visible",            obj.hide)
+        self.register_vec3f("color",              obj.color[:])
+        #self.register_int  ("state",              obj.state)
+        #self.register_float("mass",               obj.mass)
 
     #########################################
     # Event methods. These can be overwritten
@@ -137,25 +177,19 @@ class bpyZOCP(ZOCP):
         bpy.ops.object.select_pattern(pattern=name)
         bpy.ops.object.delete()
 
-    def on_peer_join(self, peer, grp, *args, **kwargs):
-        print("ZOCP JOIN    : %s joined group %s" %(peer.hex, grp))
-
-    def on_peer_leave(self, peer, grp, *args, **kwargs):
-        print("ZOCP LEAVE   : %s left group %s" %(peer.hex, grp))
-
-    def on_peer_whisper(self, peer, *args, **kwargs):
-        print("ZOCP WHISPER : %s whispered: %s" %(peer.hex, args))
-
-    def on_peer_shout(self, peer, grp, *args, **kwargs):
-        print("ZOCP SHOUT   : %s shouted in group %s: %s" %(peer.hex, grp, args))
-        
-    def on_peer_modified(self, peer, *args, **kwargs):
-        print("ZOCP MODIFIED: %s modified %s" %(peer.hex, args))
+    def on_peer_modified(self, peer, data, *args, **kwargs):
+        print("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
+        if data.get('objects'):
+            for obj,val in data['objects'].items():
+                bpy.ops.object.select_pattern(pattern=obj)
+                blenderobj = bpy.context.scene.objects[obj]
+                for key,val2 in val.items:
+                    setattr(blenderobj, key, val)
 
     #except (KeyboardInterrupt, SystemExit):
     #        self.stop()
 
-z = bpyZOCP(ctx=zmq.Context())
+z = BpyZOCP()
 
 compobj = {}
 for ob in bpy.data.objects:
