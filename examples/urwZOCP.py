@@ -202,6 +202,48 @@ class ZOCPProgressBar(urwid.ProgressBar):
         else:
             return key
 
+class ZOCPStringWidget(urwid.Edit):
+    """Edit widget for integer values"""
+
+    def valid_char(self, ch):
+        """
+        Return true for all characters.
+        """
+        return len(ch)==1
+
+    def __init__(self,caption="",default=None):
+        """
+        caption -- caption markup
+        default -- default edit value
+        """
+        if default is not None: val = str(default)
+        else: val = ""
+        self.__super.__init__(caption,val)
+
+    def value(self):
+        """
+        Return the string value of self.edit_text.
+        """
+        if self.edit_text:
+            return self.edit_text
+        else:
+            return ""
+
+    def set_edit_text(self, text):
+        """
+        Set the text for this widget.
+
+        :param text: text for editing, type (bytes or unicode)
+                     must match the text in the caption
+        """
+        text = self._normalize_to_caption(text)
+        self.highlight = None
+        self._emit("change", text)
+        self._edit_text = text
+        if self.edit_pos > len(text):
+            self.edit_pos = len(text)
+        self._invalidate()
+        
 class ZOCPIntWidget(urwid.Edit):
     """Edit widget for integer values"""
 
@@ -413,7 +455,10 @@ class ZOCPNodeWidget(urwid.WidgetWrap):
                 dtype = val.get('typeHint')
                 # get access property, readonly if none
                 access = val.get('access', 'r')
-                if dtype == 'int' and access.count('w'):
+                if dtype == 'string' and access.count('w'):
+                    wgt = urwid.AttrMap(ZOCPStringWidget(name + " : ", val.get('value')), 'options', 'selected')
+                    urwid.connect_signal(wgt.original_widget, 'change', self.on_changed, (name))
+                elif dtype == 'int' and access.count('w'):
                     wgt = urwid.AttrMap(ZOCPIntWidget(name + " : ", val.get('value')), 'options', 'selected')
                     urwid.connect_signal(wgt.original_widget, 'change', self.on_changed, (name))
                 elif dtype == 'float' and access.count('w'):
