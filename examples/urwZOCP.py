@@ -319,7 +319,7 @@ class ZOCPIntWidget(urwid.Edit):
         """
         text = self._normalize_to_caption(text)
         self.highlight = None
-        self._emit("change", int(text))
+        self._emit("change", int(text) if text != "" else 0)
         self._edit_text = text
         if self.edit_pos > len(text):
             self.edit_pos = len(text)
@@ -363,12 +363,12 @@ class ZOCPFloatWidget(urwid.Edit):
         (maxcol,) = size
 
         if key == 'right':
-            val = float(self.get_edit_text())
+            val = float(self.get_edit_text()) if self.get_edit_text() != "" else 0.0
             val -= self.step
             self.set_edit_text("%f" %val)
             #urwid.emit_signal(self, 'change', self.caption, self.value)
         elif key == 'left':
-            val = float(self.get_edit_text())
+            val = float(self.get_edit_text()) if self.get_edit_text() != "" else 0.0
             val += self.step
             self.set_edit_text("%f" %val)
         else:
@@ -415,7 +415,7 @@ class ZOCPFloatWidget(urwid.Edit):
         """
         text = self._normalize_to_caption(text)
         self.highlight = None
-        self._emit("change", float(text))
+        self._emit("change", float(text) if text != "" else 0.0)
         self._edit_text = text
         if self.edit_pos > len(text):
             self.edit_pos = len(text)
