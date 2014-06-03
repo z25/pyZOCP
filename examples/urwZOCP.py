@@ -232,7 +232,7 @@ class ZOCPKeyboardWidget(urwid.Edit):
         """
         Render the widget.
         
-        `render` is overridden so we can generate `focus_event` events 
+        `render` is overridden so we can generate `on_focus` events 
         when the focus argument changes 
 
         :param size: see `urwid.Widget.render(size, focus)`
@@ -243,11 +243,11 @@ class ZOCPKeyboardWidget(urwid.Edit):
         """
         if focus != self.focused:
             self.focused = focus
-            self.focus_event(focus)
+            self.on_focus(focus)
 
         return self.__super.render(size, focus)
 
-    def focus_event(self, focus):
+    def on_focus(self, focus):
         """
         Handle changes in focus.
         
