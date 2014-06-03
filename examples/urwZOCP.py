@@ -424,11 +424,13 @@ class ZOCPFloatWidget(urwid.Edit):
 class ZOCPNodeWidget(urwid.WidgetWrap):
 
     #control_ex = '{"control": {"myInt": {"control": "rw", "value": 1, "typeHint": "int"}, "myFloat": {"control": "rw", "value": 1.0, "typeHint": "float"}}}'
-    def __init__(self, data={}, node_id=None, *args, **kwargs):
+    def __init__(self, data={}, node_id=None, foot=None, *args, **kwargs):
         #if not isinstance(node, ZOCP):
         #    raise Exception("Node %s is not of ZOCP type" %node)
         self.node_id = node_id
         self.node_data = data
+        self.focused = False
+        self.foot = foot
         self._update_widgets()
         display_widget = urwid.Pile(urwid.SimpleFocusListWalker(self._widgets))
         super().__init__(display_widget)
@@ -488,6 +490,29 @@ class ZOCPNodeWidget(urwid.WidgetWrap):
         dat = {name: {'value': value}}
         z.whisper(self.node_id, json.dumps({'SET': dat}).encode('utf-8'))
 
+    def on_focus(self, focus):
+        if focus:
+            self.foot.original_widget.set_text("%s" %self.node_id)
+
+    def render(self, size, focus):
+        """
+        Render the widget.
+        
+        `render` is overridden so we can generate `on_focus` events
+        when the focus argument changes
+
+        :param size: see `urwid.Widget.render(size, focus)`
+        :type size: widget size
+        :param focus: set to ``True`` if this widget or one of its children
+                      is in focus
+        :type focus: bool
+        """
+        if focus != self.focused:
+            self.focused = focus
+            self.on_focus(focus)
+
+        return self.__super.render(size, focus)        
+        
 palette = [
     (None,  'light gray', 'black'),
     ('selected', 'white', 'dark blue'),
@@ -540,7 +565,6 @@ class urwZOCP(zocp.ZOCP):
             raise urwid.ExitMainLoop()
         if key in ('q', 'Q'):
             self.out.get_widget().set_text("")
-        self.foot.original_widget.set_text("%s" %self.cells.focus.original_widget.node_id)
 
     #########################################
     # ZOCP Event methods.
@@ -551,7 +575,7 @@ class urwZOCP(zocp.ZOCP):
         if not nd:
             #raise Exception("bla", self.peers)
 
-            nd = ZOCPNodeWidget(self.peers[peer], peer)
+            nd = ZOCPNodeWidget(self.peers[peer], peer, self.foot)
             self.znodes[peer] = (urwid.AttrMap(nd, 'options', focus_map), self.cells.options('given', 20))
             #index = len(cells.contents)
             #cells.contents.insert(index, (nd, ('given', 20)))
