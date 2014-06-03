@@ -585,7 +585,10 @@ class urwZOCP(zocp.ZOCP):
         print("ZOCP EXIT    : %s" %(peer.hex))
         nd = self.znodes.pop(peer)
         if nd:
-            self.cells.contents.clear()
+            # clear self.contents
+            del self.cells.contents[:]
+            
+            # repopulate self.contents with remaining self.znodes
             for val in self.znodes.values():
                 self.cells.contents.append(val)
         if len(self.znodes)==0:
