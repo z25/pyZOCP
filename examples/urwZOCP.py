@@ -190,12 +190,12 @@ class ZOCPProgressBar(urwid.ProgressBar):
         (maxcol,) = size
         cur = int(self.current)
         if key == 'right':
-            if cur > 0:
+            if cur < self.done:
                 self.set_completion(cur + 1)
                 self._emit('change', cur + 1)
             return
         elif key == 'left':
-            if cur < self.done:
+            if cur > 0:
                 self.set_completion(cur - 1)
                 self._emit('change', cur - 1)
             return
@@ -364,12 +364,12 @@ class ZOCPFloatWidget(urwid.Edit):
 
         if key == 'right':
             val = float(self.get_edit_text()) if self.get_edit_text() != "" else 0.0
-            val -= self.step
+            val += self.step
             self.set_edit_text("%f" %val)
             #urwid.emit_signal(self, 'change', self.caption, self.value)
         elif key == 'left':
             val = float(self.get_edit_text()) if self.get_edit_text() != "" else 0.0
-            val += self.step
+            val -= self.step
             self.set_edit_text("%f" %val)
         else:
             unhandled = super().keypress((maxcol,),key)
