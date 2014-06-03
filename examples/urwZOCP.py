@@ -481,7 +481,7 @@ class ZOCPNodeWidget(urwid.WidgetWrap):
                 else:
                     wgt = wgt = urwid.AttrMap(urwid.Text(name + " : %s" %val.get('value')), 'options', 'selected')
                 self._widgets.append(wgt)
-        self._widgets.append(urwid.AttrMap(urwid.Divider(u'\N{LOWER ONE QUARTER BLOCK}'), 'line'))
+        self._widgets.append(urwid.AttrMap(urwid.Divider('\N{LOWER ONE QUARTER BLOCK}'), 'line'))
         #self._widgets.append(urwid.Divider())
 
     def on_changed(self, wgt, value, name):
