@@ -424,13 +424,13 @@ class ZOCPFloatWidget(urwid.Edit):
 class ZOCPNodeWidget(urwid.WidgetWrap):
 
     #control_ex = '{"control": {"myInt": {"control": "rw", "value": 1, "typeHint": "int"}, "myFloat": {"control": "rw", "value": 1.0, "typeHint": "float"}}}'
-    def __init__(self, data={}, node_id=None, foot=None, *args, **kwargs):
+    def __init__(self, parent=None, data={}, node_id=None, *args, **kwargs):
         #if not isinstance(node, ZOCP):
         #    raise Exception("Node %s is not of ZOCP type" %node)
+        self.parent = parent
         self.node_id = node_id
         self.node_data = data
         self.focused = False
-        self.foot = foot
         self._update_widgets()
         display_widget = urwid.Pile(urwid.SimpleFocusListWalker(self._widgets))
         super().__init__(display_widget)
@@ -492,7 +492,7 @@ class ZOCPNodeWidget(urwid.WidgetWrap):
 
     def on_focus(self, focus):
         if focus:
-            self.foot.original_widget.set_text("%s" %self.node_id)
+            self.parent.foot.original_widget.set_text("%s" %self.node_id)
 
     def render(self, size, focus):
         """
@@ -551,7 +551,7 @@ class urwZOCP(zocp.ZOCP):
 
         # Urwid containers
         self.cells = urwid.GridFlow(self.znodes.values(), 20, 1, 0, 'left')
-        self.foot = urwid.AttrMap(urwid.Text("bah", align='center'), 'header')
+        self.foot = urwid.AttrMap(urwid.Text("[no node selected]", align='center'), 'header')
         self.frame = urwid.Pile((self.foot, self.cells, self.out.get_widget()), 1)
         self.fill = urwid.Filler(self.frame, 'top')
         self.loop = urwid.MainLoop(self.fill, palette, unhandled_input=self.handle_input, event_loop=ZmqEventLoop(), pop_ups=True)
@@ -575,7 +575,7 @@ class urwZOCP(zocp.ZOCP):
         if not nd:
             #raise Exception("bla", self.peers)
 
-            nd = ZOCPNodeWidget(self.peers[peer], peer, self.foot)
+            nd = ZOCPNodeWidget(self, self.peers[peer], peer)
             self.znodes[peer] = (urwid.AttrMap(nd, 'options', focus_map), self.cells.options('given', 20))
             #index = len(cells.contents)
             #cells.contents.insert(index, (nd, ('given', 20)))
@@ -588,8 +588,10 @@ class urwZOCP(zocp.ZOCP):
             self.cells.contents.clear()
             for val in self.znodes.values():
                 self.cells.contents.append(val)
-        #self.cells.update();
-
+        if len(self.znodes)==0:
+            self.cells._invalidate()
+            self.foot.original_widget.set_text("[no node selected]")
+                
     def on_peer_modified(self, peer, data, *args, **kwargs):
         print("ZOCP MODIFIED: %s modified %s" %(peer.hex, data))
         nd = self.znodes.get(peer)
