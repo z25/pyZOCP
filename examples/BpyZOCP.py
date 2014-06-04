@@ -27,21 +27,12 @@ class UIPanel(bpy.types.Panel):
 class OBJECT_OT_HelloButton(bpy.types.Operator):
     bl_idname = "send.zocpdebug"
     bl_label = "Send Debug"
-    
+
     def execute(self, context):
         print("Sending debug!")
         z.shout("ZOCP", {"MOD": {"debug": True}})
         return{'FINISHED'}    
-        
-def sendObjectData(object):
-    z.shout("ZOCP", json.dumps({ 
-                        "MOD": 
-                        { 
-                            object.name+".x": {"value": object.location.x},
-                            object.name+".y": {"value": object.location.y},
-                            object.name+".z": {"value": object.location.z},
-                        }
-                    }).encode('utf-8'))
+
 
 def sendCameraSettings(camera):
     """
@@ -83,25 +74,36 @@ def sendCameraSettings(camera):
 #                 print("camera settings changed for %s", obj.name)
 #                 sendCameraSettings(obj.data)
 
-def register():
-    for obj in  bpy.context.scene.objects:
-        if obj.type == 'MESH': # only send the object if it is a mesh or a Camera
-            z.register_float(obj.name+".x", obj.location.x, 'r')
-            z.register_float(obj.name+".y", obj.location.y, 'r')
-            z.register_float(obj.name+".z", obj.location.z, 'r')
-        elif obj.type == 'CAMERA':
-            z.register_float(obj.name+".angle", obj.data.angle, 'r')
-            z.register_float(obj.name+".shift_x", obj.data.shift_x, 'r')
-            z.register_float(obj.name+".shift_y", obj.data.shift_y, 'r')
+# def register():
+#     for obj in  bpy.context.scene.objects:
+#         if obj.type == 'MESH': # only send the object if it is a mesh or a Camera
+#             z.register_float(obj.name+".x", obj.location.x, 'r')
+#             z.register_float(obj.name+".y", obj.location.y, 'r')
+#             z.register_float(obj.name+".z", obj.location.z, 'r')
+#         elif obj.type == 'CAMERA':
+#             z.register_float(obj.name+".angle", obj.data.angle, 'r')
+#             z.register_float(obj.name+".shift_x", obj.data.shift_x, 'r')
+#             z.register_float(obj.name+".shift_y", obj.data.shift_y, 'r')
 
 class BpyZOCP(ZOCP):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_node_name("Blender@" + socket.gethostname() + ":" + bpy.app.version_string)
-        self._register_objects()
 
-    def _register_objects(self):
+    @persistent
+    def clear_objects(self):
+        print("CLEAR OBJECTS")
+        if not self.capability.get('objects'):
+            return
+        self.set_object()
+        self.capability['objects'].clear()
+        self._on_modified(self.capability)
+
+    @persistent
+    def register_objects(self):
+        print("REGISTER OBJECTS")
+        self._running = False
         for obj in bpy.context.scene.objects:
             print(obj.name)
             if obj.type in ['MESH', 'CAMERA', 'LAMP']:
@@ -111,6 +113,7 @@ class BpyZOCP(ZOCP):
                     self._register_camera(obj)
                 else:
                     self._register_mesh(obj)
+        self._running = True
 
     def _register_lamp(self, obj):
         self.set_object(obj.name, "BPY_Lamp")
@@ -118,8 +121,9 @@ class BpyZOCP(ZOCP):
         #self.register_mat3f("worldOrientation",   obj.worldOrientation[:])
         self.register_vec3f("orientation",        obj.rotation_euler[:])
         self.register_vec3f("scale",              obj.scale[:])
-        self.register_bool ("visible",            obj.hide)
-        self.register_vec3f("color",              obj.color[:])
+        self.register_vec3f("color",              obj.data.color[:])
+        self.register_float("energy",             obj.data.energy)
+        self.register_float("distance",           obj.data.distance)
         #self.register_int  ("state",              obj.state)
         #self.register_float("mass",               obj.mass)
 
@@ -138,10 +142,31 @@ class BpyZOCP(ZOCP):
         #self.register_mat3f("worldOrientation",   obj.worldOrientation[:])
         self.register_vec3f("orientation",        obj.rotation_euler[:])
         self.register_vec3f("scale",              obj.scale[:])
-        self.register_bool ("visible",            obj.hide)
-        self.register_vec3f("color",              obj.color[:])
+        self.register_vec4f("color",              obj.color[:])
         #self.register_int  ("state",              obj.state)
         #self.register_float("mass",               obj.mass)
+
+    def send_object_changes(self, obj):
+        print("SEND LOC", obj.name)
+        self.set_object(obj.name, "BPY_Mesh")
+        if self._cur_obj.get("location", {}).get("value") != obj.location[:]:
+            self.register_vec3f("location", obj.location[:])
+        if self._cur_obj.get("orientation", {}).get("value") != obj.rotation_euler[:]:
+            self.register_vec3f("orientation", obj.rotation_euler[:])
+        if self._cur_obj.get("scale", {}).get("value") != obj.scale[:]:
+            print("SCALCHG", self._cur_obj.get("scale"), obj.scale[:])
+            self.register_vec3f("scale", obj.scale[:])
+        if obj.type == "LAMP":
+            if self._cur_obj.get("color", {}).get("value") != obj.data.color[:]:
+                self.register_vec3f("color", obj.data.color[:])
+            if self._cur_obj.get("energy", {}).get("value") != obj.data.energy[:]:
+                self.register_float("energy", obj.data.energy[:])
+            if self._cur_obj.get("distance", {}).get("value") != obj.data.distance[:]:
+                self.register_float("color", obj.data.distance[:])
+        elif obj.type == "MESH":
+            if self._cur_obj.get("color", {}).get("value") != obj.color[:]:
+                self.register_vec4f("color", obj.color[:])
+
 
     #########################################
     # Event methods. These can be overwritten
@@ -170,21 +195,39 @@ class BpyZOCP(ZOCP):
         print("ZOCP EXIT    : %s" %(peer.hex))
         objects = self.peers[peer].get("objects", {})
         for obj, data in objects.items():
-            bpy.ops.object.select_pattern(pattern=obj)
-            bpy.ops.object.delete()
+            if data.get("type", "") == "projector":
+                bpy.ops.object.select_pattern(pattern=obj)
+                bpy.ops.object.delete()
         # delete empty
         name = self.peers[peer].get("_name", peer.hex)
         bpy.ops.object.select_pattern(pattern=name)
         bpy.ops.object.delete()
+        bpy.ops.object.select_all(action='DESELECT')
 
     def on_peer_modified(self, peer, data, *args, **kwargs):
         print("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
-        if data.get('objects'):
-            for obj,val in data['objects'].items():
-                bpy.ops.object.select_pattern(pattern=obj)
-                blenderobj = bpy.context.scene.objects[obj]
-                for key,val2 in val.items:
-                    setattr(blenderobj, key, val)
+        if data.get("_name", "").startswith("BGE"):
+            print("WE FOUND A BGE NODE")
+#         if data.get('objects'):
+#             for obj,val in data['objects'].items():
+#                 if val.get("Type")
+#                 bpy.ops.object.select_all(action='DESELECT')
+#                 bpy.ops.object.select_pattern(pattern=obj)
+#                 try:
+#                     blenderobj = bpy.context.scene.objects[obj]
+#                 except KeyError as e:
+#                     print(e)
+#                 else:
+#                     for key,val2 in val.items():
+#                         try:
+#                             setattr(blenderobj, key, val)
+#                         except AttributeError as e:
+#                             print(e)
+#                         except TypeError as e:
+#                             print(e)
+#                         except ValueError as e:
+#                             print(e)
+
 
     #except (KeyboardInterrupt, SystemExit):
     #        self.stop()
@@ -193,11 +236,25 @@ z = BpyZOCP()
 
 compobj = {}
 for ob in bpy.data.objects:
+    print(ob.name)
     compobj[ob.name] = ob.matrix_world.copy()
 
 # Needed for delaying 
 toffset = 1/30.0
 tstamp = time.time()
+
+@persistent
+def clear_objects(context):
+    global compobj
+    compobj.clear()
+    z.clear_objects()
+
+@persistent
+def register_objects(context):
+    global compobj
+    z.register_objects()
+    for ob in bpy.data.objects:
+        compobj[ob.name] = ob.matrix_world.copy()
 
 @persistent
 def scene_update(context):
@@ -213,16 +270,23 @@ def scene_update(context):
 
 @persistent
 def frame_update(context):
-    update_objects()
+    for ob in bpy.data.objects:
+        if not compobj.get(ob.name):
+            compobj[ob.name] = ob.matrix_world
+            z.send_object_changes(ob)
+        elif ob.is_updated and ob.matrix_world != compobj[ob.name]:
+            z.send_object_changes(ob)
 
 def update_objects():
-    global compobj
+    #global compobj
     if bpy.data.objects.is_updated:
         for ob in bpy.data.objects:
-            if ob.is_updated and ob.matrix_world != compobj[ob.name]:
-                print("=>", ob.name, ob.matrix_world)
-                compobj[ob.name] = ob.matrix_world.copy()
-                sendObjectData(ob)
+            ###### TODO: BETTER CODE FOR MANGING CHANGED DATA
+            if not compobj.get(ob.name):
+                compobj[ob.name] = ob.matrix_world
+                z.send_object_changes(ob)
+            elif ob.is_updated and ob.matrix_world != compobj[ob.name]:
+                z.send_object_changes(ob)
 
 #register cameras
 #register()
@@ -230,6 +294,11 @@ bpy.utils.register_module(__name__)
 #bpy.app.handlers.scene_update_post.append(update_data)
 #bpy.app.handlers.frame_change_pre.clear()
 #bpy.app.handlers.frame_change_pre.append(update_data)
+bpy.app.handlers.load_pre.clear()
+bpy.app.handlers.load_post.clear()
+bpy.app.handlers.load_pre.append(clear_objects)
+bpy.app.handlers.load_post.append(register_objects)
+
 bpy.app.handlers.scene_update_post.clear()
 bpy.app.handlers.scene_update_post.append(scene_update)
 bpy.app.handlers.frame_change_post.clear()
