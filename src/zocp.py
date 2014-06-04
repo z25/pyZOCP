@@ -63,7 +63,7 @@ def dict_merge(a, b, path=None):
     if not isinstance(a, dict):
         return b
     if path is None: path = []
-    for key in b:
+    for key in b.keys():
         if key in a:
             if isinstance(a[key], dict) and isinstance(b[key], dict):
                 dict_merge(a[key], b[key], path + [str(key)])
@@ -165,6 +165,20 @@ class ZOCP(Pyre):
             self.capability['objects'][name]['type'] = type
         self._cur_obj = self.capability['objects'][name]
         self._cur_obj_keys = ('objects', name)
+
+    def _register_param(self, name, type_hint, update=False, access='r', min=None, max=None, step=None):
+        newdata = {'value': int, 'typeHint': typehint, 'access':access }
+        if min:
+            self._cur_obj[name]['min'] = min
+        if max:
+            self._cur_obj[name]['max'] = max
+        if step:
+            self._cur_obj[name]['step'] = step
+        if update and self._cur_obj.get(name):
+            merge_dict(self._cur_obj[name], newdata)
+        else:
+            self._cur_obj[name] = newdata
+        self._on_modified(data={name: newdata})
 
     def register_int(self, name, int, access='r', min=None, max=None, step=None):
         """
@@ -532,14 +546,13 @@ class ZOCP(Pyre):
         if self._cur_obj_keys:
             # the last key in the _cur_obj_keys list equals 
             # the first in data so skip the last key
-            for key in self._cur_obj_keys[-2::-1]:
+            for key in self._cur_obj_keys[::-1]:
                 new_data = {}
                 new_data[key] = data
                 data = new_data
-            data = self._cur_obj_keys
         self.on_modified(data, peer)
         if self._running:
-            self.shout("ZOCP", json.dumps({ 'MOD' :self.capability}).encode('utf-8'))
+            self.shout("ZOCP", json.dumps({ 'MOD' :data}).encode('utf-8'))
 
     def run_once(self, timeout=None):
         """
