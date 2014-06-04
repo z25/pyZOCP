@@ -201,9 +201,73 @@ class ZOCPProgressBar(urwid.ProgressBar):
             return
         else:
             return key
+            
+class ZOCPKeyboardWidget(urwid.Edit):
+    """Edit widget which emits its value when pressing enter or loosing focus"""
 
-class ZOCPStringWidget(urwid.Edit):
-    """Edit widget for integer values"""
+    def __init__(self,caption="",val=None):
+        """
+        caption -- caption markup
+        default -- default edit value
+        """
+        self.set_val = val
+        self.focused = False
+        self.__super.__init__(caption,val)
+
+    def keypress(self, size, key):
+        """
+        Handle editing keystrokes. Emit change message when
+        pressing enter or when leaving widget
+        """
+        (maxcol,) = size
+        unhandled = super().keypress((maxcol,),key)
+
+        if key == 'enter':
+            self.set_val = self.value()
+            self._emit("change", self.value())
+
+        return unhandled
+        
+    def render(self, size, focus):
+        """
+        Render the widget.
+        
+        `render` is overridden so we can generate `on_focus` events 
+        when the focus argument changes 
+
+        :param size: see `urwid.Widget.render(size, focus)`
+        :type size: widget size
+        :param focus: set to ``True`` if this widget or one of its children
+                      is in focus
+        :type focus: bool        
+        """
+        if focus != self.focused:
+            self.focused = focus
+            self.on_focus(focus)
+
+        return self.__super.render(size, focus)
+
+    def on_focus(self, focus):
+        """
+        Handle changes in focus.
+        
+        :param focus: set to ``True`` if this widget or one of its children
+                      is in focus
+        :type focus: bool        
+        """
+        if focus:
+            # Received focus
+            self.set_val = self.value()
+        else:
+            # Lost focus
+            val = self.value()
+            if val != self.set_val:
+                self.set_val = val
+                self._emit("change", val)
+
+                
+class ZOCPStringWidget(ZOCPKeyboardWidget):
+    """Edit widget for string values"""
 
     def valid_char(self, ch):
         """
@@ -238,13 +302,12 @@ class ZOCPStringWidget(urwid.Edit):
         """
         text = self._normalize_to_caption(text)
         self.highlight = None
-        self._emit("change", text)
         self._edit_text = text
         if self.edit_pos > len(text):
             self.edit_pos = len(text)
         self._invalidate()
         
-class ZOCPIntWidget(urwid.Edit):
+class ZOCPIntWidget(ZOCPKeyboardWidget):
     """Edit widget for integer values"""
 
     def valid_char(self, ch):
@@ -263,6 +326,7 @@ class ZOCPIntWidget(urwid.Edit):
         """
         if default is not None: val = str(default)
         else: val = ""
+        self.set_val = val
         self.__super.__init__(caption,val)
 
     def keypress(self, size, key):
@@ -299,7 +363,7 @@ class ZOCPIntWidget(urwid.Edit):
         >>> e.value() == 51
         True
         """
-        if self.edit_text:
+        if self.edit_text and self.edit_text != "":
             return int(self.edit_text)
         else:
             return 0
@@ -319,13 +383,12 @@ class ZOCPIntWidget(urwid.Edit):
         """
         text = self._normalize_to_caption(text)
         self.highlight = None
-        self._emit("change", int(text) if text != "" else 0)
         self._edit_text = text
         if self.edit_pos > len(text):
             self.edit_pos = len(text)
         self._invalidate()
 
-class ZOCPFloatWidget(urwid.Edit):
+class ZOCPFloatWidget(ZOCPKeyboardWidget):
 
     def valid_char(self, ch):
         """
@@ -366,11 +429,14 @@ class ZOCPFloatWidget(urwid.Edit):
             val = float(self.get_edit_text()) if self.get_edit_text() != "" else 0.0
             val += self.step
             self.set_edit_text("%f" %val)
-            #urwid.emit_signal(self, 'change', self.caption, self.value)
+            self.set_val = val
+            self._emit("change", val)
         elif key == 'left':
             val = float(self.get_edit_text()) if self.get_edit_text() != "" else 0.0
             val -= self.step
             self.set_edit_text("%f" %val)
+            self.set_val = val
+            self._emit("change", val)
         else:
             unhandled = super().keypress((maxcol,),key)
 
@@ -392,7 +458,7 @@ class ZOCPFloatWidget(urwid.Edit):
         >>> e.value() == 51
         True
         """
-        if self.edit_text:
+        if self.edit_text and self.edit_text != "":
             return float(self.edit_text)
         else:
             return 0.0
@@ -415,7 +481,6 @@ class ZOCPFloatWidget(urwid.Edit):
         """
         text = self._normalize_to_caption(text)
         self.highlight = None
-        self._emit("change", float(text) if text != "" else 0.0)
         self._edit_text = text
         if self.edit_pos > len(text):
             self.edit_pos = len(text)
