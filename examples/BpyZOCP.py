@@ -193,6 +193,7 @@ class BpyZOCP(ZOCP):
 
     def on_peer_exit(self, peer, *args, **kwargs):
         print("ZOCP EXIT    : %s" %(peer.hex))
+        bpy.ops.object.select_all(action='DESELECT')
         objects = self.peers[peer].get("objects", {})
         for obj, data in objects.items():
             if data.get("type", "") == "projector":
@@ -201,6 +202,8 @@ class BpyZOCP(ZOCP):
         # delete empty
         name = self.peers[peer].get("_name", peer.hex)
         bpy.ops.object.select_pattern(pattern=name)
+        bpy.ops.object.delete()
+        bpy.ops.object.select_pattern(pattern=peer.hex)
         bpy.ops.object.delete()
         bpy.ops.object.select_all(action='DESELECT')
 
