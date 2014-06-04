@@ -328,7 +328,7 @@ class ZOCP(Pyre):
             self._cur_obj[name]['max'] = max
         if step:
             self._cur_obj[name]['step'] = step
-        if self._running: self.on_modified(data={name: self.capability[name]})
+        self._on_modified(data={name: self._cur_obj[name]})
 
     #########################################
     # Node methods to peers
