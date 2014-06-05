@@ -13,17 +13,36 @@ alreadyDeletedObjects = set()
 camSettings = {}
 mistSettings = ()
 
+def toggleDebug(s, ctx):
+    pass
+
+# PROPERTIES
+bpy.types.Scene.zdebug_prop = bpy.props.BoolProperty( name="Toggle Debug", description = "This is a boolean", default=False, update=toggleDebug )
+bpy.types.Scene.zmute_prop = bpy.props.BoolProperty( name="Mute", description = "This is a boolean", default=False )
+bpy.types.Scene.zname_prop = bpy.props.StringProperty(name="Node Name", default=socket.gethostname(),description = "This can be used to identify your node")
 
 #    Menu in UI region
 #
 class UIPanel(bpy.types.Panel):
-    bl_label = "Send debug message"
+    bl_label = "ZOCP Control"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
- 
-    def draw(self, context):
-        self.layout.operator("send.oscdebug", text='Toggle debug')
 
+    def draw(self, context):
+        scn = bpy.context.scene
+        self.layout.operator("send.all", text='Send all object data')
+        self.layout.prop( scn, "zdebug_prop" ) 
+        self.layout.prop( scn, "zmute_prop" )
+        self.layout.prop( scn, "zname_prop" )
+
+class OBJECT_OT_SendMesh(bpy.types.Operator):
+    bl_idname = "send.all"
+    bl_label = "Send Object Data"
+
+    def execute(self, context):
+        z.register_objects();
+        return{'FINISHED'}   
+        
 class OBJECT_OT_HelloButton(bpy.types.Operator):
     bl_idname = "send.zocpdebug"
     bl_label = "Send Debug"
@@ -147,14 +166,12 @@ class BpyZOCP(ZOCP):
         #self.register_float("mass",               obj.mass)
 
     def send_object_changes(self, obj):
-        print("SEND LOC", obj.name)
         self.set_object(obj.name, "BPY_Mesh")
         if self._cur_obj.get("location", {}).get("value") != obj.location[:]:
             self.register_vec3f("location", obj.location[:])
         if self._cur_obj.get("orientation", {}).get("value") != obj.rotation_euler[:]:
             self.register_vec3f("orientation", obj.rotation_euler[:])
         if self._cur_obj.get("scale", {}).get("value") != obj.scale[:]:
-            print("SCALCHG", self._cur_obj.get("scale"), obj.scale[:])
             self.register_vec3f("scale", obj.scale[:])
         if obj.type == "LAMP":
             if self._cur_obj.get("color", {}).get("value") != obj.data.color[:]:
@@ -166,6 +183,9 @@ class BpyZOCP(ZOCP):
         elif obj.type == "MESH":
             if self._cur_obj.get("color", {}).get("value") != obj.color[:]:
                 self.register_vec4f("color", obj.color[:])
+        elif obj.type == "CAMERA":
+            print("CAAAAAAAAAAAAAAMERAAAAAAAA")
+            self._register_camera(obj)
 
 
     #########################################
@@ -211,6 +231,9 @@ class BpyZOCP(ZOCP):
         print("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
         if data.get("_name", "").startswith("BGE"):
             print("WE FOUND A BGE NODE")
+            # TODO: If we have camera for it send it the settings
+            # otherwise create new camera
+            
 #         if data.get('objects'):
 #             for obj,val in data['objects'].items():
 #                 if val.get("Type")
@@ -284,7 +307,7 @@ def update_objects():
     #global compobj
     if bpy.data.objects.is_updated:
         for ob in bpy.data.objects:
-            ###### TODO: BETTER CODE FOR MANGING CHANGED DATA
+            ###### TODO: BETTER CODE FOR MANAGING CHANGED DATA
             if not compobj.get(ob.name):
                 compobj[ob.name] = ob.matrix_world
                 z.send_object_changes(ob)
