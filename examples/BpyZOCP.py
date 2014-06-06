@@ -194,22 +194,22 @@ class BpyZOCP(ZOCP):
     def on_peer_enter(self, peer, *args, **kwargs):
         print("ZOCP ENTER   : %s" %(peer.hex))
         # create an empty for peer
-        name = self.peers[peer].get("_name", peer.hex)
-        bpy.ops.object.empty_add(type="PLAIN_AXES")
-        bpy.context.object.name = name
-        # get projectors on peer
-        objects = self.peers[peer].get("objects", {})
-        for obj, data in objects.items():
-            if data.get("type", "") == "projector":
-                loc = data.get("location", (0,0,0))
-                ori = data.get("orientation", (0,0,0))
-                bpy.ops.object.camera_add(view_align=True,
-                                          enter_editmode=False,
-                                          location=loc,
-                                          rotation=ori,
-                                          layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False)
-                                          )
-                bpy.context.object.name = obj
+#         name = self.peers[peer].get("_name", peer.hex)
+#         bpy.ops.object.empty_add(type="PLAIN_AXES")
+#         bpy.context.object.name = name
+#         # get projectors on peer
+#         objects = self.peers[peer].get("objects", {})
+#         for obj, data in objects.items():
+#             if data.get("type", "") == "projector":
+#                 loc = data.get("location", (0,0,0))
+#                 ori = data.get("orientation", (0,0,0))
+#                 bpy.ops.object.camera_add(view_align=True,
+#                                           enter_editmode=False,
+#                                           location=loc,
+#                                           rotation=ori,
+#                                           layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False)
+#                                           )
+#                 bpy.context.object.name = obj
 
     def on_peer_exit(self, peer, *args, **kwargs):
         print("ZOCP EXIT    : %s" %(peer.hex))
@@ -229,11 +229,28 @@ class BpyZOCP(ZOCP):
 
     def on_peer_modified(self, peer, data, *args, **kwargs):
         print("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
-        if data.get("_name", "").startswith("BGE"):
-            print("WE FOUND A BGE NODE")
-            # TODO: If we have camera for it send it the settings
+        name = data.get("_name", "")
+        if name.startswith("BGE"):
+            # If we have camera for it send it the settings
             # otherwise create new camera
-            
+            try:
+                c=bpy.data.objects[name]
+            except KeyError as e:
+                print("WE FOUND AN UNKNOWN BGE NODE, creating a camera for it")
+                # create a new camera
+                loc = data.get("location", (0,0,0))
+                ori = data.get("orientation", (0,0,0))
+                bpy.ops.object.camera_add(view_align=True,
+                                          enter_editmode=False,
+                                          location=loc,
+                                          rotation=ori,
+                                          layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False)
+                                          )
+                bpy.context.object.name = name
+            else:
+                print("WE FOUND A BGE NODE, sending camera data")
+                self._register_camera(c)
+
 #         if data.get('objects'):
 #             for obj,val in data['objects'].items():
 #                 if val.get("Type")
@@ -296,23 +313,26 @@ def scene_update(context):
 
 @persistent
 def frame_update(context):
+    global compobj
     for ob in bpy.data.objects:
         if not compobj.get(ob.name):
-            compobj[ob.name] = ob.matrix_world
+            compobj[ob.name] = ob.matrix_world.copy()
             z.send_object_changes(ob)
         elif ob.is_updated and ob.matrix_world != compobj[ob.name]:
             z.send_object_changes(ob)
+            compobj[ob.name] = ob.matrix_world.copy()
 
 def update_objects():
-    #global compobj
+    global compobj
     if bpy.data.objects.is_updated:
         for ob in bpy.data.objects:
             ###### TODO: BETTER CODE FOR MANAGING CHANGED DATA
             if not compobj.get(ob.name):
-                compobj[ob.name] = ob.matrix_world
+                compobj[ob.name] = ob.matrix_world.copy()
                 z.send_object_changes(ob)
             elif ob.is_updated and ob.matrix_world != compobj[ob.name]:
                 z.send_object_changes(ob)
+                compobj[ob.name] = ob.matrix_world.copy()
 
 #register cameras
 #register()
