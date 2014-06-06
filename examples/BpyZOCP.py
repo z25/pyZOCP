@@ -13,17 +13,36 @@ alreadyDeletedObjects = set()
 camSettings = {}
 mistSettings = ()
 
+def toggleDebug(s, ctx):
+    pass
+
+# PROPERTIES
+bpy.types.Scene.zdebug_prop = bpy.props.BoolProperty( name="Toggle Debug", description = "This is a boolean", default=False, update=toggleDebug )
+bpy.types.Scene.zmute_prop = bpy.props.BoolProperty( name="Mute", description = "This is a boolean", default=False )
+bpy.types.Scene.zname_prop = bpy.props.StringProperty(name="Node Name", default=socket.gethostname(),description = "This can be used to identify your node")
 
 #    Menu in UI region
 #
 class UIPanel(bpy.types.Panel):
-    bl_label = "Send debug message"
+    bl_label = "ZOCP Control"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
- 
-    def draw(self, context):
-        self.layout.operator("send.oscdebug", text='Toggle debug')
 
+    def draw(self, context):
+        scn = bpy.context.scene
+        self.layout.operator("send.all", text='Send all object data')
+        self.layout.prop( scn, "zdebug_prop" ) 
+        self.layout.prop( scn, "zmute_prop" )
+        self.layout.prop( scn, "zname_prop" )
+
+class OBJECT_OT_SendMesh(bpy.types.Operator):
+    bl_idname = "send.all"
+    bl_label = "Send Object Data"
+
+    def execute(self, context):
+        z.register_objects();
+        return{'FINISHED'}   
+        
 class OBJECT_OT_HelloButton(bpy.types.Operator):
     bl_idname = "send.zocpdebug"
     bl_label = "Send Debug"
@@ -147,14 +166,12 @@ class BpyZOCP(ZOCP):
         #self.register_float("mass",               obj.mass)
 
     def send_object_changes(self, obj):
-        print("SEND LOC", obj.name)
         self.set_object(obj.name, "BPY_Mesh")
         if self._cur_obj.get("location", {}).get("value") != obj.location[:]:
             self.register_vec3f("location", obj.location[:])
         if self._cur_obj.get("orientation", {}).get("value") != obj.rotation_euler[:]:
             self.register_vec3f("orientation", obj.rotation_euler[:])
         if self._cur_obj.get("scale", {}).get("value") != obj.scale[:]:
-            print("SCALCHG", self._cur_obj.get("scale"), obj.scale[:])
             self.register_vec3f("scale", obj.scale[:])
         if obj.type == "LAMP":
             if self._cur_obj.get("color", {}).get("value") != obj.data.color[:]:
@@ -166,6 +183,9 @@ class BpyZOCP(ZOCP):
         elif obj.type == "MESH":
             if self._cur_obj.get("color", {}).get("value") != obj.color[:]:
                 self.register_vec4f("color", obj.color[:])
+        elif obj.type == "CAMERA":
+            print("CAAAAAAAAAAAAAAMERAAAAAAAA")
+            self._register_camera(obj)
 
 
     #########################################
@@ -174,22 +194,22 @@ class BpyZOCP(ZOCP):
     def on_peer_enter(self, peer, *args, **kwargs):
         print("ZOCP ENTER   : %s" %(peer.hex))
         # create an empty for peer
-        name = self.peers[peer].get("_name", peer.hex)
-        bpy.ops.object.empty_add(type="PLAIN_AXES")
-        bpy.context.object.name = name
-        # get projectors on peer
-        objects = self.peers[peer].get("objects", {})
-        for obj, data in objects.items():
-            if data.get("type", "") == "projector":
-                loc = data.get("location", (0,0,0))
-                ori = data.get("orientation", (0,0,0))
-                bpy.ops.object.camera_add(view_align=True,
-                                          enter_editmode=False,
-                                          location=loc,
-                                          rotation=ori,
-                                          layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False)
-                                          )
-                bpy.context.object.name = obj
+#         name = self.peers[peer].get("_name", peer.hex)
+#         bpy.ops.object.empty_add(type="PLAIN_AXES")
+#         bpy.context.object.name = name
+#         # get projectors on peer
+#         objects = self.peers[peer].get("objects", {})
+#         for obj, data in objects.items():
+#             if data.get("type", "") == "projector":
+#                 loc = data.get("location", (0,0,0))
+#                 ori = data.get("orientation", (0,0,0))
+#                 bpy.ops.object.camera_add(view_align=True,
+#                                           enter_editmode=False,
+#                                           location=loc,
+#                                           rotation=ori,
+#                                           layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False)
+#                                           )
+#                 bpy.context.object.name = obj
 
     def on_peer_exit(self, peer, *args, **kwargs):
         print("ZOCP EXIT    : %s" %(peer.hex))
@@ -209,8 +229,28 @@ class BpyZOCP(ZOCP):
 
     def on_peer_modified(self, peer, data, *args, **kwargs):
         print("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
-        if data.get("_name", "").startswith("BGE"):
-            print("WE FOUND A BGE NODE")
+        name = data.get("_name", "")
+        if name.startswith("BGE"):
+            # If we have camera for it send it the settings
+            # otherwise create new camera
+            try:
+                c=bpy.data.objects[name]
+            except KeyError as e:
+                print("WE FOUND AN UNKNOWN BGE NODE, creating a camera for it")
+                # create a new camera
+                loc = data.get("location", (0,0,0))
+                ori = data.get("orientation", (0,0,0))
+                bpy.ops.object.camera_add(view_align=True,
+                                          enter_editmode=False,
+                                          location=loc,
+                                          rotation=ori,
+                                          layers=(True, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False)
+                                          )
+                bpy.context.object.name = name
+            else:
+                print("WE FOUND A BGE NODE, sending camera data")
+                self._register_camera(c)
+
 #         if data.get('objects'):
 #             for obj,val in data['objects'].items():
 #                 if val.get("Type")
@@ -273,23 +313,26 @@ def scene_update(context):
 
 @persistent
 def frame_update(context):
+    global compobj
     for ob in bpy.data.objects:
         if not compobj.get(ob.name):
-            compobj[ob.name] = ob.matrix_world
+            compobj[ob.name] = ob.matrix_world.copy()
             z.send_object_changes(ob)
         elif ob.is_updated and ob.matrix_world != compobj[ob.name]:
             z.send_object_changes(ob)
+            compobj[ob.name] = ob.matrix_world.copy()
 
 def update_objects():
-    #global compobj
+    global compobj
     if bpy.data.objects.is_updated:
         for ob in bpy.data.objects:
-            ###### TODO: BETTER CODE FOR MANGING CHANGED DATA
+            ###### TODO: BETTER CODE FOR MANAGING CHANGED DATA
             if not compobj.get(ob.name):
-                compobj[ob.name] = ob.matrix_world
+                compobj[ob.name] = ob.matrix_world.copy()
                 z.send_object_changes(ob)
             elif ob.is_updated and ob.matrix_world != compobj[ob.name]:
                 z.send_object_changes(ob)
+                compobj[ob.name] = ob.matrix_world.copy()
 
 #register cameras
 #register()
