@@ -40,7 +40,7 @@ class OBJECT_OT_SendMesh(bpy.types.Operator):
     bl_label = "Send Object Data"
 
     def execute(self, context):
-        z.register_objects();
+        z.refresh_objects();
         return{'FINISHED'}   
         
 class OBJECT_OT_HelloButton(bpy.types.Operator):
@@ -74,7 +74,7 @@ def sendCameraSettings(camera):
     z.capability[camera.name+".angle"]['value'] = angle
     z.capability[camera.name+".shift_x"]['value'] = lx
     z.capability[camera.name+".shift_y"]['value'] = ly       
-    
+
     camSettings[camera.name] = (angle, lx, ly)
      
 # @persistent         
@@ -119,7 +119,6 @@ class BpyZOCP(ZOCP):
         self.capability['objects'].clear()
         self._on_modified(self.capability)
 
-    @persistent
     def register_objects(self):
         print("REGISTER OBJECTS")
         self._running = False
@@ -133,6 +132,19 @@ class BpyZOCP(ZOCP):
                 else:
                     self._register_mesh(obj)
         self._running = True
+
+    @persistent
+    def refresh_objects(self):
+        print("REFRESHING OBJECTS")
+        for obj in bpy.context.scene.objects:
+            print(obj.name)
+            if obj.type in ['MESH', 'CAMERA', 'LAMP']:
+                if obj.type == "LAMP":
+                    self._register_lamp(obj)
+                elif obj.type == "CAMERA":
+                    self._register_camera(obj)
+                else:
+                    self._register_mesh(obj)
 
     def _register_lamp(self, obj):
         self.set_object(obj.name, "BPY_Lamp")
@@ -184,7 +196,6 @@ class BpyZOCP(ZOCP):
             if self._cur_obj.get("color", {}).get("value") != obj.color[:]:
                 self.register_vec4f("color", obj.color[:])
         elif obj.type == "CAMERA":
-            print("CAAAAAAAAAAAAAAMERAAAAAAAA")
             self._register_camera(obj)
 
 
@@ -213,22 +224,22 @@ class BpyZOCP(ZOCP):
 
     def on_peer_exit(self, peer, *args, **kwargs):
         print("ZOCP EXIT    : %s" %(peer.hex))
-        bpy.ops.object.select_all(action='DESELECT')
-        objects = self.peers[peer].get("objects", {})
-        for obj, data in objects.items():
-            if data.get("type", "") == "projector":
-                bpy.ops.object.select_pattern(pattern=obj)
-                bpy.ops.object.delete()
-        # delete empty
-        name = self.peers[peer].get("_name", peer.hex)
-        bpy.ops.object.select_pattern(pattern=name)
-        bpy.ops.object.delete()
-        bpy.ops.object.select_pattern(pattern=peer.hex)
-        bpy.ops.object.delete()
-        bpy.ops.object.select_all(action='DESELECT')
+#         bpy.ops.object.select_all(action='DESELECT')
+#         objects = self.peers[peer].get("objects", {})
+#         for obj, data in objects.items():
+#             if data.get("type", "") == "projector":
+#                 bpy.ops.object.select_pattern(pattern=obj)
+#                 bpy.ops.object.delete()
+#         # delete empty
+#         name = self.peers[peer].get("_name", peer.hex)
+#         bpy.ops.object.select_pattern(pattern=name)
+#         bpy.ops.object.delete()
+#         bpy.ops.object.select_pattern(pattern=peer.hex)
+#         bpy.ops.object.delete()
+#         bpy.ops.object.select_all(action='DESELECT')
 
     def on_peer_modified(self, peer, data, *args, **kwargs):
-        print("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
+        #print("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
         name = data.get("_name", "")
         if name.startswith("BGE"):
             # If we have camera for it send it the settings
@@ -250,6 +261,9 @@ class BpyZOCP(ZOCP):
             else:
                 print("WE FOUND A BGE NODE, sending camera data")
                 self._register_camera(c)
+
+    def on_modified(self, data, peer=None):
+        pass
 
 #         if data.get('objects'):
 #             for obj,val in data['objects'].items():
