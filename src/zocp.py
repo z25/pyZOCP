@@ -78,6 +78,8 @@ class ZOCP(Pyre):
     def __init__(self, capability={}, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.peers = {} # id : capability data
+        self.subscriptions = {}
+        self.subscribers = {}
         self.name = capability.get('_name')
         self.capability = capability
         self._cur_obj = self.capability
@@ -367,6 +369,9 @@ class ZOCP(Pyre):
         """
         Subscribe a sensor to a signal
         """
+        if not peer in self.subscriptions.keys():
+            self.subscriptions.update({peer: {}})
+
         msg = json.dumps({'SUB': [signal, sensor]})
         self.whisper(peer, msg.encode('utf-8'))
 
@@ -374,6 +379,8 @@ class ZOCP(Pyre):
         """
         Unsubscribe a sensor from a signaller
         """
+        self.subscriptions.pop(peer)
+
         msg = json.dumps({'SUB': [signal, sensor]})
         self.whisper(peer, msg.encode('utf-8'))
 
@@ -448,6 +455,10 @@ class ZOCP(Pyre):
             self.on_peer_enter(peer, msg)
             return
         if type == "EXIT":
+            if peer in self.subscribers.keys():
+                self.subscribers.pop(peer)
+            if peer in self.subscriptions.keys():
+                self.subscriptions.pop(peer)
             self.on_peer_exit(peer, msg)
             self.peers.pop(peer)
             return
@@ -456,6 +467,8 @@ class ZOCP(Pyre):
             self.on_peer_join(peer, grp, msg)
             return
         if type == "LEAVE":
+            #self.subscriptions.pop(peer)
+            #self.subscribers.pop(peer)
             grp = msg.pop(0)
             self.on_peer_leave(peer, grp, msg)
             return
@@ -520,17 +533,15 @@ class ZOCP(Pyre):
 
     def _handle_CALL(self, data, peer, grp):
         return
-        self.peers[peer] = dict_merge(self.peers.get(peer), data)
 
     def _handle_SUB(self, data, peer, grp):
+        if not peer in self.subscribers.keys():
+            self.subscribers.update({peer: {}})
         return
-        self.capability = dict_merge(self.capability, data)
-        self.on_modified(data, peer)
 
     def _handle_UNSUB(self, data, peer, grp):
+        self.subscribers.pop(peer)
         return
-        self.capability = dict_merge(self.capability, data)
-        self.on_modified(data, peer)
 
     def _handle_REP(self, data, peer, grp):
         return
