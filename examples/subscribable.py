@@ -2,20 +2,17 @@
 
 from zocp import ZOCP
 import socket
-import re
-from uuid import UUID
-import json
 
 class SubscribableNode(ZOCP):
     # Constructor
     def __init__(self, nodename=""):
         self.nodename = nodename
+        self.value = 1
         super().__init__()
 
     def run(self):
         self.set_node_name(self.nodename)
-        value=1
-        self.register_float("Value", value, 'rw')
+        self.register_float("Value", self.value, 'rw')
         super().run()
     
     def on_modified(self, data, peer=None):
@@ -24,9 +21,9 @@ class SubscribableNode(ZOCP):
             if modifiedkey == "Value":
                 newValue = data['Value']['value']
 
-            if newValue != value:
-                value = newValue
-                self._on_modified(data=self.capability)
+                if newValue != self.value:
+                    self.value = newValue
+                    self._on_modified(data=self.capability)
                 
     def on_peer_modified(self, peer, data, *args, **kwargs):
         pass

@@ -563,7 +563,8 @@ class ZOCP(Pyre):
                 data = new_data
         self.on_modified(data, peer)
         if self._running:
-            self.shout("ZOCP", json.dumps({ 'MOD' :data}).encode('utf-8'))
+            for subscriber in self.subscribers:
+                self.whisper(subscriber, json.dumps({ 'MOD' :data}).encode('utf-8'))
 
     def run_once(self, timeout=None):
         """
