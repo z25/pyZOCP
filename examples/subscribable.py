@@ -23,7 +23,6 @@ class SubscribableNode(ZOCP):
 
                 if newValue != self.value:
                     self.value = newValue
-                    self._on_modified(data=self.capability)
                 
     def on_peer_modified(self, peer, data, *args, **kwargs):
         pass

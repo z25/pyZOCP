@@ -529,7 +529,7 @@ class ZOCP(Pyre):
 
     def _handle_SET(self, data, peer, grp):
         self.capability = dict_merge(self.capability, data)
-        self.on_modified(data, peer)
+        self._on_modified(data, peer)
 
     def _handle_CALL(self, data, peer, grp):
         return
