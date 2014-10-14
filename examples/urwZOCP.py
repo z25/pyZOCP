@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # Z25 Orchestror Control Protocol
 # Copyright (c) 2013, Stichting z25.org, All rights reserved.
 # Copyright (c) 2013, Arnaud Loonstra, All rights reserved.
