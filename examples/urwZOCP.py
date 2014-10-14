@@ -645,6 +645,8 @@ class urwZOCP(zocp.ZOCP):
             #index = len(cells.contents)
             #cells.contents.insert(index, (nd, ('given', 20)))
             self.cells.contents.append(self.znodes[peer])
+            
+        self.peer_subscribe(peer, None, None)
 
     def on_peer_exit(self, peer, *args, **kwargs):
         print("ZOCP EXIT    : %s" %(peer.hex))
