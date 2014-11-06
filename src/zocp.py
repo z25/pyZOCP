@@ -385,7 +385,7 @@ class ZOCP(Pyre):
             if not any(self.subscriptions[peer]):
                 self.subscriptions.pop[peer]
 
-        msg = json.dumps({'SUB': [emitter, receiver]})
+        msg = json.dumps({'UNSUB': [emitter, receiver]})
         self.whisper(peer, msg.encode('utf-8'))
 
     def emit_signal(self, emitter, data):
