@@ -365,24 +365,40 @@ class ZOCP(Pyre):
         msg = json.dumps({'CALL': [method, args]})
         self.whisper(peer, msg.encode('utf-8'))
 
-    def peer_subscribe(self, peer, signal, sensor):
+    def peer_subscribe(self, peer, emitter="__all__", receiver=None):
         """
-        Subscribe a sensor to a signal
+        Subscribe a receiver to an emitter
         """
-        if not peer in self.subscriptions.keys():
+        if not peer in self.subscriptions:
             self.subscriptions.update({peer: {}})
+        self.subscriptions[peer].update({emitter: receiver})
 
-        msg = json.dumps({'SUB': [signal, sensor]})
+        msg = json.dumps({'SUB': [emitter, receiver]})
         self.whisper(peer, msg.encode('utf-8'))
 
-    def peer_unsubscribe(self, peer, signal, sensor):
+    def peer_unsubscribe(self, peer, emitter="__all__", receiver=None):
         """
-        Unsubscribe a sensor from a signaller
+        Unsubscribe a receiver from an emitter
         """
-        self.subscriptions.pop(peer)
+        if peer in self.subscriptions:
+            self.subscriptions[peer].pop(emitter)
+            if not any(self.subscriptions[peer]):
+                self.subscriptions.pop[peer]
 
-        msg = json.dumps({'SUB': [signal, sensor]})
+        msg = json.dumps({'SUB': [emitter, receiver]})
         self.whisper(peer, msg.encode('utf-8'))
+
+    def emit_signal(self, emitter, data):
+        """
+        Signal all subscribed receivers
+        """
+        self.capability[emitter]['value'] = data
+        msg = json.dumps({'SIG': [emitter, data]})
+
+        for subscriber in self.subscribers:
+            if "__all__" in self.subscribers[subscriber] or emitter in self.subscribers[subscriber]:
+	            self.whisper(subscriber, msg.encode('utf-8'))
+
 
     #########################################
     # ZRE event methods. These can be overwritten
@@ -421,7 +437,13 @@ class ZOCP(Pyre):
         print("ZOCP PEER REPLIED : %s modified %s" %(peer.hex, data))
 
     def on_peer_signaled(self, peer, data, *args, **kwargs):
-        print("ZOCP PEER SIGNALED: %s modified %s" %(peer.hex, data))
+        """
+        Called when a peer signals that some of its data is modified.
+
+        data: changed data
+        peer: id of peer whose data has been changed
+        """
+        print("ZOCP PEER SIGNALED: %s signaled %s" %(peer.hex, data))
 
     def on_modified(self, data, peer=None):
         """
@@ -449,15 +471,15 @@ class ZOCP(Pyre):
         peer = uuid.UUID(bytes=msg.pop(0))
         grp=None
         if type == "ENTER":
-            if not peer in self.peers.keys():
+            if not peer in self.peers:
                 self.peers.update({peer: {}})
             self.peer_get_capability(peer)
             self.on_peer_enter(peer, msg)
             return
         if type == "EXIT":
-            if peer in self.subscribers.keys():
+            if peer in self.subscribers:
                 self.subscribers.pop(peer)
-            if peer in self.subscriptions.keys():
+            if peer in self.subscriptions:
                 self.subscriptions.pop(peer)
             self.on_peer_exit(peer, msg)
             self.peers.pop(peer)
@@ -467,8 +489,10 @@ class ZOCP(Pyre):
             self.on_peer_join(peer, grp, msg)
             return
         if type == "LEAVE":
-            #self.subscriptions.pop(peer)
-            #self.subscribers.pop(peer)
+            #if peer in self.subscribers:
+            #    self.subscriptions.pop(peer)
+            #if peer in self.subscriptions:
+            #    self.subscribers.pop(peer)
             grp = msg.pop(0)
             self.on_peer_leave(peer, grp, msg)
             return
@@ -513,7 +537,7 @@ class ZOCP(Pyre):
         """
         If data is empty just return the complete capabilities object
         else fetch every item requested and return them
-        """ 
+        """
         if not data:
             data = {'MOD': self.get_capability()}
             self.whisper(peer, json.dumps(data).encode('utf-8'))
@@ -535,12 +559,16 @@ class ZOCP(Pyre):
         return
 
     def _handle_SUB(self, data, peer, grp):
-        if not peer in self.subscribers.keys():
+        if not peer in self.subscribers:
             self.subscribers.update({peer: {}})
+        self.subscribers[peer].update({data[0]: data[1]})
         return
 
     def _handle_UNSUB(self, data, peer, grp):
-        self.subscribers.pop(peer)
+        if peer in self.subscribers:
+            self.subscribers[peer].pop(data[0])
+            if not any(self.subscribers[peer]):
+                self.subscribers.pop[peer]
         return
 
     def _handle_REP(self, data, peer, grp):
@@ -551,7 +579,19 @@ class ZOCP(Pyre):
         self.on_peer_modified(peer, data)
 
     def _handle_SIG(self, data, peer, grp):
-        return
+        self.peers[peer][data[0]].update({'value': data[1]})
+
+        if peer in self.subscriptions:
+            subscription = self.subscriptions[peer]
+            if data[0] in subscription:
+                # propagate the signal if it changes the value of this node
+                receiver = subscription[data[0]]
+                new_value = data[1]
+                if self.capability[receiver]['value'] != new_value:
+                    self.emit_signal(receiver, new_value)
+
+            if "__all__" in subscription or data[0] in subscription:
+                self.on_peer_signaled(peer, data)
 
     def _on_modified(self, data, peer=None):
         if self._cur_obj_keys:
@@ -562,9 +602,31 @@ class ZOCP(Pyre):
                 new_data[key] = data
                 data = new_data
         self.on_modified(data, peer)
-        if self._running:
+
+        if len(data) == 1:
+            # if the only modification is a value change,
+            # emit a SIG instead of a MOD
+            name = list(data.keys())[0]
+            if len(data[name]) == 1 and 'value' in data[name]:
+                msg = json.dumps({'SIG': [name, data[name]['value']]})
+                for subscriber in self.subscribers:
+                    # no need to send the signal to the node that
+                    # modified the value
+                    if subscriber != peer and (
+                            "__all__" in self.subscribers[subscriber] or
+                            name in self.subscribers[subscriber]):
+                        self.whisper(subscriber, msg.encode('utf-8'))
+                data = {}
+
+        if any(data):
+            msg = json.dumps({ 'MOD' :data}).encode('utf-8')
             for subscriber in self.subscribers:
-                self.whisper(subscriber, json.dumps({ 'MOD' :data}).encode('utf-8'))
+                # inform node that are subscribed to one or more
+                # updated capabilities that they have changed
+                if subscriber != peer and (
+                        "__all__" in self.subscribers[subscriber] or
+                        len(set(self.subscribers[subscriber]) & set(data)) > 0):
+                    self.whisper(subscriber, msg)
 
     def run_once(self, timeout=None):
         """
