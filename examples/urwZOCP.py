@@ -553,6 +553,7 @@ class ZOCPNodeWidget(urwid.WidgetWrap):
         #self._widgets.append(urwid.Divider())
 
     def on_changed(self, wgt, value, name):
+        self.node_data[name].update({'value': value})
         dat = {name: {'value': value}}
         z.whisper(self.node_id, json.dumps({'SET': dat}).encode('utf-8'))
 
@@ -647,7 +648,7 @@ class urwZOCP(zocp.ZOCP):
             #cells.contents.insert(index, (nd, ('given', 20)))
             self.cells.contents.append(self.znodes[peer])
             
-        self.peer_subscribe(peer, None, None)
+        self.peer_subscribe(peer)
 
     def on_peer_exit(self, peer, *args, **kwargs):
         print("ZOCP EXIT    : %s" %(peer.hex))
@@ -668,6 +669,12 @@ class urwZOCP(zocp.ZOCP):
         nd = self.znodes.get(peer)
         if nd:
             nd[0].original_widget.update(self.peers.get(peer, {}))
+
+    def on_peer_signaled(self, peer, data, *args, **kwargs):
+        print("ZOCP SIGNALED: %s modified %s" %(peer.hex, data))
+        nd = self.znodes.get(peer)
+        if nd:
+            nd[0].original_widget.update()
 
     def run(self):
         handle = self.loop.watch_file(self.get_socket(), self.get_message)
