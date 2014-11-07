@@ -10,5 +10,4 @@ if __name__ == '__main__':
     z.register_int('myInt', 10, access='rw', min=-10, max=10, step=1)
     z.register_percent('myPercent', 12, access='rw')
     z.run()
-    z.stop()
     print("FINISH")
