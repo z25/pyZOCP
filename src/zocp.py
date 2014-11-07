@@ -440,6 +440,7 @@ class ZOCP(Pyre):
         msg = self.get_socket().recv_multipart()
         type = msg.pop(0).decode('utf-8')
         peer = uuid.UUID(bytes=msg.pop(0))
+        name = msg.pop(0).decode('utf-8')
         grp=None
         if type == "ENTER":
             if not peer in self.peers.keys():
@@ -470,7 +471,7 @@ class ZOCP(Pyre):
         try:
             msg = json.loads(msg.pop(0).decode('utf-8'))
         except Exception as e:
-            print("ERROR: %s" %e)
+            print("ERROR: %s in %s, type %s" %(e, msg, type))
         else:
             for method in msg.keys():
                 if method   == 'GET':
@@ -500,7 +501,7 @@ class ZOCP(Pyre):
         """
         If data is empty just return the complete capabilities object
         else fetch every item requested and return them
-        """ 
+        """
         if not data:
             data = {'MOD': self.get_capability()}
             self.whisper(peer, json.dumps(data).encode('utf-8'))
