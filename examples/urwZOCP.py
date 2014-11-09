@@ -626,7 +626,6 @@ class urwZOCP(zocp.ZOCP):
 
     def handle_input(self, key):
         if key == 'esc':
-            self.stop()
             raise urwid.ExitMainLoop()
         if key in ('q', 'Q'):
             self.out.get_widget().set_text("")
