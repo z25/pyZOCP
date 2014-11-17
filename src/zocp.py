@@ -19,6 +19,9 @@ from pyre import Pyre
 import json
 import zmq
 import uuid
+import logging
+
+logger = logging.getLogger(__name__)
 
 def dict_get(d, keys):
     """
@@ -77,8 +80,8 @@ class ZOCP(Pyre):
 
     def __init__(self, capability={}, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.peers = {} # id : capability data
-        self.name = capability.get('_name')
+        self.set_header("X-ZOCP", "1")
+        self.peers_capabilities = {} # peer id : capability data
         self.capability = capability
         self._cur_obj = self.capability
         self._cur_obj_keys = ()
@@ -110,14 +113,17 @@ class ZOCP(Pyre):
         """
         Set node's name, overwites previous
         """
-        self.capability['_name'] = name
-        self._on_modified(data={'_name': name})
+        # Is handled by Pyre
+        logger.warning("DEPRECATED: set_node_name is deprecated, use set_name")
+        self.set_name(name)
 
     def get_node_name(self, name):
         """
         Return node's name
         """
-        return self.capability.get('_name')
+        # Is handled by Pyre
+        logger.warning("DEPRECATED: get_node_name is deprecated, use get_name")
+        return self.get_name()
 
     def set_node_location(self, location=[0,0,0]):
         """
@@ -443,28 +449,40 @@ class ZOCP(Pyre):
         name = msg.pop(0).decode('utf-8')
         grp=None
         if type == "ENTER":
-            if not peer in self.peers.keys():
-                self.peers.update({peer: {}})
+            # This is giving conflicts when using a poller, in discussion
+            #if not self.get_peer_header_value(peer, "X-ZOCP"):
+            #    logger.debug("Node is not a ZOCP node")
+            #    return
+
+            if not peer in self.peers_capabilities.keys():
+                self.peers_capabilities.update({peer: {}})
+
             self.peer_get_capability(peer)
             self.on_peer_enter(peer, msg)
             return
+
         if type == "EXIT":
             self.on_peer_exit(peer, msg)
-            self.peers.pop(peer)
+            self.peers_capabilities.pop(peer)
             return
+
         if type == "JOIN":
             grp = msg.pop(0)
             self.on_peer_join(peer, grp, msg)
             return
+
         if type == "LEAVE":
             grp = msg.pop(0)
             self.on_peer_leave(peer, grp, msg)
             return
+
         if type == "SHOUT":
             grp = msg.pop(0)
             self.on_peer_shout(peer, grp, msg)
+
         elif type == "WHISPER":
             self.on_peer_whisper(peer, msg)
+
         else:
             return
 
@@ -521,7 +539,7 @@ class ZOCP(Pyre):
 
     def _handle_CALL(self, data, peer, grp):
         return
-        self.peers[peer] = dict_merge(self.peers.get(peer), data)
+        self.peers_capabilities[peer] = dict_merge(self.peers_capabilities.get(peer), data)
 
     def _handle_SUB(self, data, peer, grp):
         return
@@ -537,7 +555,7 @@ class ZOCP(Pyre):
         return
 
     def _handle_MOD(self, data, peer, grp):
-        self.peers[peer] = dict_merge(self.peers.get(peer), data)
+        self.peers_capabilities[peer] = dict_merge(self.peers_capabilities.get(peer), data)
         self.on_peer_modified(peer, data)
 
     def _handle_SIG(self, data, peer, grp):
