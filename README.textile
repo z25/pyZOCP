@@ -2,7 +2,25 @@ h1. pyZOCP
 
 Python ZOCP implementation (Z25 Orchestration Control Protocol)
 
-h2. Quick installation on Ubuntu Trusty
+ZOCP: Trying to control multiple computers in live performances is a challenging task. Often 
+computers intercommunicate using fixed or manual parameters. However when projects expand across 
+many devices this is hard to maintain. Especially in situations where the parameters tend to 
+change. ZOCP is a new protocol which facilitates flexibility and autonomous setups in an 
+orchestrated environment. 
+
+The ZOCP protocol is designed with the following in mind:
+
+- KISS (Keep it simple and stupid): We want this protocol not be in our way and we want to be able to understand it easily.
+- Zero Configuration: The protocol should be able to handle most, if not all configuration by itself. There is no need for setting up specific parameters unless requested, aka convention over configuration.
+- Runs on anything TCP/IP: Since TCP/IP is the de facto standard for devices to communicate the technology should be able to run on any device that is able to talk TCP/IP
+- Open Standards: All used technologies, software, protocols should be freely and openly available.
+- Low latency, when needed
+- Reliability, when needed
+- Unintrusive debugging and monitoring
+
+[Read more ...](http://www.z25.org/static/_rd_/zocp_init_plab/index.html)
+
+h2. Quick installation on Ubuntu/Debian
 
 <pre>
 sudo apt-get install python3-zmq
