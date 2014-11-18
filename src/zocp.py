@@ -89,9 +89,7 @@ class ZOCP(Pyre):
         # We always join the ZOCP group
         self.join("ZOCP")
         self.poller = zmq.Poller()
-        self.poller.register(self.get_socket(), zmq.POLLIN)
-
-        #self.run()
+        self.poller.register(self.inbox, zmq.POLLIN)
 
     #########################################
     # Node methods. 
@@ -386,23 +384,23 @@ class ZOCP(Pyre):
     #########################################
     # ZRE event methods. These can be overwritten
     #########################################
-    def on_peer_enter(self, peer, *args, **kwargs):
-        print("ZRE ENTER    : %s" %(peer.hex))
+    def on_peer_enter(self, peer, name, *args, **kwargs):
+        print("ZRE ENTER    : %s" %(name))
 
-    def on_peer_exit(self, peer, *args, **kwargs):
-        print("ZRE EXIT     : %s" %(peer.hex))
+    def on_peer_exit(self, peer, name, *args, **kwargs):
+        print("ZRE EXIT     : %s" %(name))
 
-    def on_peer_join(self, peer, grp, *args, **kwargs):
-        print("ZRE JOIN     : %s joined group %s" %(peer.hex, grp))
+    def on_peer_join(self, peer, name, grp, *args, **kwargs):
+        print("ZRE JOIN     : %s joined group %s" %(name, grp))
 
-    def on_peer_leave(self, peer, grp, *args, **kwargs):
-        print("ZRE LEAVE    : %s left group %s" %(peer.hex, grp))
+    def on_peer_leave(self, peer, name, grp, *args, **kwargs):
+        print("ZRE LEAVE    : %s left group %s" %(name, grp))
 
-    def on_peer_whisper(self, peer, data, *args, **kwargs):
-        print("ZRE WHISPER  : %s whispered: %s" %(peer.hex, data))
+    def on_peer_whisper(self, peer, name, data, *args, **kwargs):
+        print("ZRE WHISPER  : %s whispered: %s" %(name, data))
 
-    def on_peer_shout(self, peer, grp, data, *args, **kwargs):
-        print("ZRE SHOUT    : %s shouted in group %s: %s" %(peer.hex, grp, data))
+    def on_peer_shout(self, peer, name, grp, data, *args, **kwargs):
+        print("ZRE SHOUT    : %s shouted in group %s: %s" %(name, grp, data))
 
     #########################################
     # ZOCP event methods. These can be overwritten
@@ -443,7 +441,7 @@ class ZOCP(Pyre):
         # * msg peer id
         # * group (if group type)
         # * the actual message
-        msg = self.get_socket().recv_multipart()
+        msg = self.recv()
         type = msg.pop(0).decode('utf-8')
         peer = uuid.UUID(bytes=msg.pop(0))
         name = msg.pop(0).decode('utf-8')
@@ -458,30 +456,30 @@ class ZOCP(Pyre):
                 self.peers_capabilities.update({peer: {}})
 
             self.peer_get_capability(peer)
-            self.on_peer_enter(peer, msg)
+            self.on_peer_enter(peer, name, msg)
             return
 
         if type == "EXIT":
-            self.on_peer_exit(peer, msg)
+            self.on_peer_exit(peer, name, msg)
             self.peers_capabilities.pop(peer)
             return
 
         if type == "JOIN":
             grp = msg.pop(0)
-            self.on_peer_join(peer, grp, msg)
+            self.on_peer_join(peer, name, grp, msg)
             return
 
         if type == "LEAVE":
             grp = msg.pop(0)
-            self.on_peer_leave(peer, grp, msg)
+            self.on_peer_leave(peer, name, grp, msg)
             return
 
         if type == "SHOUT":
             grp = msg.pop(0)
-            self.on_peer_shout(peer, grp, msg)
+            self.on_peer_shout(peer, name, grp, msg)
 
         elif type == "WHISPER":
-            self.on_peer_whisper(peer, msg)
+            self.on_peer_whisper(peer, name, msg)
 
         else:
             return
@@ -586,7 +584,7 @@ class ZOCP(Pyre):
         items = dict(self.poller.poll(timeout))
         while(len(items) > 0):
             for fd, ev in items.items():
-                if self.get_socket() == fd and ev == zmq.POLLIN:
+                if self.inbox == fd and ev == zmq.POLLIN:
                     self.get_message()
             # just q quick query
             items = dict(self.poller.poll(0))
@@ -599,7 +597,7 @@ class ZOCP(Pyre):
         while(self._running):
             try:
                 items = dict(self.poller.poll(timeout))
-                if self.get_socket() in items and items[self.get_socket()] == zmq.POLLIN:
+                if self.inbox in items and items[self.inbox] == zmq.POLLIN:
                     self.get_message()
             except (KeyboardInterrupt, SystemExit):
                 break
