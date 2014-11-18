@@ -108,7 +108,7 @@ class BpyZOCP(ZOCP):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.set_node_name("Blender@" + socket.gethostname() + ":" + bpy.app.version_string)
+        self.set_name("Blender@" + socket.gethostname() + ":" + bpy.app.version_string)
 
     @persistent
     def clear_objects(self):
