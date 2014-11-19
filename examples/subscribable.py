@@ -14,8 +14,9 @@ class SubscribableNode(ZOCP):
         self.string_value = ''
         super().__init__()
 
+
     def run(self):
-        self.set_node_name(self.nodename)
+        self.set_name(self.nodename)
         self.register_float("My Float", self.float_value, 'rw')
         self.register_bool("Counter active", self.counter_active, 'rw')
         self.register_float("Counter", self.count_value, 'r')
@@ -23,29 +24,23 @@ class SubscribableNode(ZOCP):
 
         self.stop_timer = self.call_repeatedly(1, self.on_timer)
         super().run()
+
     
     def stop(self):
         self.stop_timer()
         super().stop()
+
 
     def on_modified(self, data, peer=None):
         if self._running and peer:
             for key in data:
                 if 'value' in data[key]:
                     self.receive_value(key)
+
                 
     def on_peer_signaled(self, peer, data, *args, **kwargs):
         if self._running and peer:
             self.receive_value(data[0])
-
-    def on_peer_modified(self, peer, data, *args, **kwargs):
-        pass
-    
-    def on_peer_enter(self, peer, *args, **kwargs):
-        pass
-    
-    def on_peer_exit(self, peer, *args, **kwargs):
-        pass
 
 
     def receive_value(self, key):
@@ -80,5 +75,4 @@ class SubscribableNode(ZOCP):
 if __name__ == '__main__':
     z = SubscribableNode("subscribable@%s" % socket.gethostname())
     z.run()
-    z.stop()
     print("FINISH")
