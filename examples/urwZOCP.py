@@ -490,11 +490,12 @@ class ZOCPFloatWidget(ZOCPKeyboardWidget):
 class ZOCPNodeWidget(urwid.WidgetWrap):
 
     #control_ex = '{"control": {"myInt": {"control": "rw", "value": 1, "typeHint": "int"}, "myFloat": {"control": "rw", "value": 1.0, "typeHint": "float"}}}'
-    def __init__(self, parent=None, data={}, node_id=None, *args, **kwargs):
+    def __init__(self, parent=None, data={}, node_id=None, node_name="NoName", *args, **kwargs):
         #if not isinstance(node, ZOCP):
         #    raise Exception("Node %s is not of ZOCP type" %node)
         self.parent = parent
         self.node_id = node_id
+        self.node_name = node_name
         self.node_data = data
         self.focused = False
         self._update_widgets()
@@ -511,7 +512,7 @@ class ZOCPNodeWidget(urwid.WidgetWrap):
 
     def _update_widgets(self):
         #self.node_data.update(data)
-        name = self.node_data.get('_name', "NoName")
+        name = self.node_name
         #self._widgets = [urwid.AttrMap(urwid.Text([name]), 'heading') ]
         self._widgets = [urwid.AttrMap(HeadingWithPopUp(name), 'heading') ]
         for name, val in self.node_data.items():
@@ -628,7 +629,6 @@ class urwZOCP(zocp.ZOCP):
 
     def handle_input(self, key):
         if key == 'esc':
-            self.stop()
             raise urwid.ExitMainLoop()
         if key in ('q', 'Q'):
             self.out.get_widget().set_text("")
@@ -636,13 +636,13 @@ class urwZOCP(zocp.ZOCP):
     #########################################
     # ZOCP Event methods.
     #########################################
-    def on_peer_enter(self, peer, *args, **kwargs):
-        print("ZOCP ENTER   : %s" %(peer.hex))
+    def on_peer_enter(self, peer, name, *args, **kwargs):
+        print("ZOCP ENTER   : %s" %(name))
         nd = self.znodes.get(peer)
         if not nd:
-            #raise Exception("bla", self.peers)
+            #raise Exception("bla", self.peers_capabilities)
 
-            nd = ZOCPNodeWidget(self, self.peers[peer], peer)
+            nd = ZOCPNodeWidget(self, self.peers_capabilities[peer], peer, name)
             self.znodes[peer] = (urwid.AttrMap(nd, 'options', focus_map), self.cells.options('given', 20))
             #index = len(cells.contents)
             #cells.contents.insert(index, (nd, ('given', 20)))
@@ -650,8 +650,8 @@ class urwZOCP(zocp.ZOCP):
             
         self.peer_subscribe(peer)
 
-    def on_peer_exit(self, peer, *args, **kwargs):
-        print("ZOCP EXIT    : %s" %(peer.hex))
+    def on_peer_exit(self, peer, name, *args, **kwargs):
+        print("ZOCP EXIT    : %s" %(name))
         nd = self.znodes.pop(peer)
         if nd:
             # clear self.contents
@@ -668,7 +668,7 @@ class urwZOCP(zocp.ZOCP):
         print("ZOCP MODIFIED: %s modified %s" %(peer.hex, data))
         nd = self.znodes.get(peer)
         if nd:
-            nd[0].original_widget.update(self.peers.get(peer, {}))
+            nd[0].original_widget.update(self.peers_capabilities.get(peer, {}))
 
     def on_peer_signaled(self, peer, data, *args, **kwargs):
         print("ZOCP SIGNALED: %s modified %s" %(peer.hex, data))
@@ -677,7 +677,7 @@ class urwZOCP(zocp.ZOCP):
             nd[0].original_widget.update()
 
     def run(self):
-        handle = self.loop.watch_file(self.get_socket(), self.get_message)
+        handle = self.loop.watch_file(self.inbox, self.get_message)
         self._running = True
         self.loop.run()
         self.stop()
