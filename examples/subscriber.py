@@ -13,8 +13,8 @@ class SubscriberNode(ZOCP):
 
     def run(self):
         self.set_name(self.nodename)
-        self.register_string("My String", self.string_value, 'rw')
-        self.register_int("Linked counter", self.count_value, 'r')
+        self.register_string("My String", self.string_value, 'rws')
+        self.register_int("Linked counter", self.count_value, 'rs')
         super().run()
         
     def on_peer_enter(self, peer, name, *args, **kwargs):

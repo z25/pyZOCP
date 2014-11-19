@@ -17,10 +17,10 @@ class SubscribableNode(ZOCP):
 
     def run(self):
         self.set_name(self.nodename)
-        self.register_float("My Float", self.float_value, 'rw')
+        self.register_float("My Float", self.float_value, 'rwe')
         self.register_bool("Counter active", self.counter_active, 'rw')
-        self.register_float("Counter", self.count_value, 'r')
-        self.register_string("My String", self.string_value, 'rw')
+        self.register_float("Counter", self.count_value, 're')
+        self.register_string("My String", self.string_value, 'rwe')
 
         self.stop_timer = self.call_repeatedly(1, self.on_timer)
         super().run()
