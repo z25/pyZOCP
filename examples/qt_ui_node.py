@@ -25,7 +25,7 @@ class QTZOCPNode(QtWidgets.QWidget):
         self.z.set_node_name("QT UI TEST")
         self.z.register_float("myFloat", 2.3, 'rw', 0, 5.0, 0.1)
         self.notifier = QtCore.QSocketNotifier(
-                self.z.get_socket().getsockopt(zmq.FD), 
+                self.z.inbox.getsockopt(zmq.FD), 
                 QtCore.QSocketNotifier.Read
                 )
         self.notifier.setEnabled(True)
