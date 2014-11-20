@@ -385,22 +385,22 @@ class ZOCP(Pyre):
     # ZRE event methods. These can be overwritten
     #########################################
     def on_peer_enter(self, peer, name, *args, **kwargs):
-        print("ZRE ENTER    : %s" %(name))
+        logger.debug("ZRE ENTER    : %s" %(name))
 
     def on_peer_exit(self, peer, name, *args, **kwargs):
-        print("ZRE EXIT     : %s" %(name))
+        logger.debug("ZRE EXIT     : %s" %(name))
 
     def on_peer_join(self, peer, name, grp, *args, **kwargs):
-        print("ZRE JOIN     : %s joined group %s" %(name, grp))
+        logger.debug("ZRE JOIN     : %s joined group %s" %(name, grp))
 
     def on_peer_leave(self, peer, name, grp, *args, **kwargs):
-        print("ZRE LEAVE    : %s left group %s" %(name, grp))
+        logger.debug("ZRE LEAVE    : %s left group %s" %(name, grp))
 
     def on_peer_whisper(self, peer, name, data, *args, **kwargs):
-        print("ZRE WHISPER  : %s whispered: %s" %(name, data))
+        logger.debug("ZRE WHISPER  : %s whispered: %s" %(name, data))
 
     def on_peer_shout(self, peer, name, grp, data, *args, **kwargs):
-        print("ZRE SHOUT    : %s shouted in group %s: %s" %(name, grp, data))
+        logger.debug("ZRE SHOUT    : %s shouted in group %s: %s" %(name, grp, data))
 
     #########################################
     # ZOCP event methods. These can be overwritten
@@ -412,13 +412,13 @@ class ZOCP(Pyre):
     #def on_unsubscribe(self, peer, src, dst):
 
     def on_peer_modified(self, peer, data, *args, **kwargs):
-        print("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
+        logger.debug("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
 
     def on_peer_replied(self, peer, data, *args, **kwargs):
-        print("ZOCP PEER REPLIED : %s modified %s" %(peer.hex, data))
+        logger.debug("ZOCP PEER REPLIED : %s modified %s" %(peer.hex, data))
 
     def on_peer_signaled(self, peer, data, *args, **kwargs):
-        print("ZOCP PEER SIGNALED: %s modified %s" %(peer.hex, data))
+        logger.debug("ZOCP PEER SIGNALED: %s modified %s" %(peer.hex, data))
 
     def on_modified(self, data, peer=None):
         """
@@ -428,9 +428,9 @@ class ZOCP(Pyre):
         peer: id of peer who made the change
         """
         if peer:
-            print("ZOCP modified by %s with %s" %(peer.hex, data))
+            logger.debug("ZOCP modified by %s with %s" %(peer.hex, data))
         else:
-            print("ZOCP modified by %s with %s" %("self", data))
+            logger.debug("ZOCP modified by %s with %s" %("self", data))
 
     #########################################
     # Internal methods
@@ -487,7 +487,7 @@ class ZOCP(Pyre):
         try:
             msg = json.loads(msg.pop(0).decode('utf-8'))
         except Exception as e:
-            print("ERROR: %s in %s, type %s" %(e, msg, type))
+            logger.error("ERROR: %s in %s, type %s" %(e, msg, type))
         else:
             for method in msg.keys():
                 if method   == 'GET':

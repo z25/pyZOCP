@@ -1,8 +1,12 @@
 #!/usr/bin/python
 
 from zocp import ZOCP
+import logging
 
 if __name__ == '__main__':
+    zl = logging.getLogger("zocp")
+    zl.setLevel(logging.INFO)
+
     z = ZOCP()
     z.set_name("ZOCP-Test")
     z.register_bool("myBool", True, 'rw')
