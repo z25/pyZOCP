@@ -5,7 +5,7 @@ import logging
 
 if __name__ == '__main__':
     zl = logging.getLogger("zocp")
-    zl.setLevel(logging.INFO)
+    zl.setLevel(logging.DEBUG)
 
     z = ZOCP()
     z.set_name("ZOCP-Test")
