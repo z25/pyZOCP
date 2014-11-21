@@ -38,7 +38,7 @@ class QTZOCPNode(QtWidgets.QWidget):
         self.z.run_once(0)
         print("ZOCP EVENT END")
 
-    def on_modified(self, data, peer):
+    def on_modified(self, data, peer, name):
         t = self.qle.toPlainText()
         t = "{0}\n{1}".format(data, t)
         self.qle.setPlainText(t)

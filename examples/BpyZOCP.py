@@ -203,8 +203,8 @@ class BpyZOCP(ZOCP):
     #########################################
     # Event methods. These can be overwritten
     #########################################
-    def on_peer_enter(self, peer, *args, **kwargs):
-        print("ZOCP ENTER   : %s" %(peer.hex))
+    def on_peer_enter(self, peer, name, *args, **kwargs):
+        print("ZOCP ENTER   : %s" %(name))
         # create an empty for peer
 #         name = self.peers[peer].get("_name", peer.hex)
 #         bpy.ops.object.empty_add(type="PLAIN_AXES")
@@ -223,8 +223,8 @@ class BpyZOCP(ZOCP):
 #                                           )
 #                 bpy.context.object.name = obj
 
-    def on_peer_exit(self, peer, *args, **kwargs):
-        print("ZOCP EXIT    : %s" %(peer.hex))
+    def on_peer_exit(self, peer, name, *args, **kwargs):
+        print("ZOCP EXIT    : %s" %(name))
 #         bpy.ops.object.select_all(action='DESELECT')
 #         objects = self.peers[peer].get("objects", {})
 #         for obj, data in objects.items():
@@ -239,8 +239,8 @@ class BpyZOCP(ZOCP):
 #         bpy.ops.object.delete()
 #         bpy.ops.object.select_all(action='DESELECT')
 
-    def on_peer_modified(self, peer, data, *args, **kwargs):
-        #print("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
+    def on_peer_modified(self, peer, name, data, *args, **kwargs):
+        #print("ZOCP PEER MODIFIED: %s modified %s" %(name, data))
         name = data.get("_name", "")
         if name.startswith("BGE"):
             # If we have camera for it send it the settings
@@ -263,7 +263,7 @@ class BpyZOCP(ZOCP):
                 print("WE FOUND A BGE NODE, sending camera data")
                 self._register_camera(c)
 
-    def on_modified(self, data, peer=None):
+    def on_modified(self, data, peer=None, name=None):
         pass
 
 #         if data.get('objects'):
