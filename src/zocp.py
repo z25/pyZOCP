@@ -283,7 +283,7 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': vec2f, 'typeHint': 'vec3f', 'access':access }
+        self._cur_obj[name] = {'value': vec2f, 'typeHint': 'vec2f', 'access':access }
         if min:
             self._cur_obj[name]['min'] = min
         if max:
