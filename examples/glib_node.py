@@ -20,6 +20,7 @@ GObject.io_add_watch(
         GObject.PRIORITY_DEFAULT, 
         GObject.IO_IN, zocp_handle
     )
+z.start()
 try:
     loop.run()
 except Exception as e:

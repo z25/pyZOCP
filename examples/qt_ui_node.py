@@ -31,6 +31,7 @@ class QTZOCPNode(QtWidgets.QWidget):
         self.notifier.setEnabled(True)
         self.notifier.activated.connect(self.zocp_event)
         self.z.on_modified = self.on_modified
+        self.z.start()
 
     def zocp_event(self):
         print("ZOCP EVENT START")

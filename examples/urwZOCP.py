@@ -753,10 +753,12 @@ class urwZOCP(zocp.ZOCP):
             nd[0].original_widget.update(self.peers_capabilities.get(peer, {}))
 
     def run(self):
+        self.start()
         handle = self.loop.watch_file(self.inbox, self.get_message)
         self._running = True
         self.loop.run()
         self.stop()
+        sys.stdout = self.oldout
 
 if __name__ == "__main__":
     ctx = zmq.Context()
