@@ -487,11 +487,94 @@ class ZOCPFloatWidget(ZOCPKeyboardWidget):
             self.edit_pos = len(text)
         self._invalidate()
 
+class ZOCPVec2fWidget(ZOCPKeyboardWidget):
+
+    def valid_char(self, ch):
+        """
+        Return true for decimal digits.
+        """
+        return len(ch)==1 and ch in "0123456789."
+
+    def __init__(self, caption="", value=[0.0,0.0], min=None, max=None, step=[0.1,0.1]):
+        """
+        caption -- caption markup
+        default -- default edit value
+        """            
+        self.min = min
+        self.max = max
+        self.step = step
+        super().__init__(caption, "[%.3f, %.3f]" %(value[0], value[1]))
+
+    def keypress(self, size, key):
+        """
+        Handle editing keystrokes.  Remove leading zeros.
+        """
+        (maxcol,) = size
+
+        if key == 'd':
+            val = self.value()
+            val[0] = val[0] + self.step[0]
+            self.set_value(val)
+            self._emit("change", val)
+        elif key == 'a':
+            val = self.value()
+            val[0] = val[0] - self.step[0]
+            self.set_value(val)
+            self._emit("change", val)
+        elif key == 'w':
+            val = self.value()
+            val[1] = val[1] + self.step[1]
+            self.set_value(val)
+            self._emit("change", val)
+        elif key == 's':
+            val = self.value()
+            val[1] = val[1] - self.step[1]
+            self.set_value(val)
+            self._emit("change", val)
+        else:
+            unhandled = super().keypress((maxcol,),key)
+
+            if not unhandled:
+            # trim leading zeros
+                while self.edit_pos > 0 and self.edit_text[:1] == "0":
+                    self.set_edit_pos( self.edit_pos - 1)
+                    self.set_edit_text(self.edit_text[1:])
+
+            return unhandled
+
+    def value(self):
+        """
+        Return the numeric value of self.edit_text.
+        """
+        if self.edit_text and self.edit_text != "":
+            return eval(self.edit_text)
+        else:
+            return [0.0, 0,0]
+
+    def set_value(self, val):
+        self.set_edit_text("[%.3f, %.3f]" %(val[0], val[1]))
+
+    def set_edit_text(self, text):
+        """
+        Set the text for this widget.
+
+        :param text: text for editing, type (bytes or unicode)
+                     must match the text in the caption
+        :type text: bytes or unicode
+        """
+        text = self._normalize_to_caption(text)
+        self.highlight = None
+        self._edit_text = text
+        if self.edit_pos > len(text):
+            self.edit_pos = len(text)
+        self._invalidate()
+
+
 class ZOCPNodeWidget(urwid.WidgetWrap):
 
     #control_ex = '{"control": {"myInt": {"control": "rw", "value": 1, "typeHint": "int"}, "myFloat": {"control": "rw", "value": 1.0, "typeHint": "float"}}}'
     def __init__(self, parent=None, data={}, node_id=None, node_name="NoName", *args, **kwargs):
-        #if not isinstance(node, ZOCP):
+        #if not isinstance(node, ZOCP)
         #    raise Exception("Node %s is not of ZOCP type" %node)
         self.parent = parent
         self.node_id = node_id
@@ -532,6 +615,9 @@ class ZOCPNodeWidget(urwid.WidgetWrap):
                     urwid.connect_signal(wgt.original_widget, 'change', self.on_changed, (name))
                 elif dtype == 'float' and access.count('w'):
                     wgt = urwid.AttrMap(ZOCPFloatWidget(caption=name + " :", value=val.get('value')), 'options', 'selected')
+                    urwid.connect_signal(wgt.original_widget, 'change', self.on_changed, (name))
+                elif dtype == 'vec2f' and access.count('w'):
+                    wgt = urwid.AttrMap(ZOCPVec2fWidget(caption=name + " :", value=val.get('value')), 'options', 'selected')
                     urwid.connect_signal(wgt.original_widget, 'change', self.on_changed, (name))
                 elif dtype == 'bool' and access.count('w'):
                     wgt = urwid.AttrMap(urwid.CheckBox(name, state=val.get('value')), 'options', 'selected')
@@ -677,10 +763,12 @@ class urwZOCP(zocp.ZOCP):
             nd[0].original_widget.update()
 
     def run(self):
+        self.start()
         handle = self.loop.watch_file(self.inbox, self.get_message)
         self._running = True
         self.loop.run()
         self.stop()
+        sys.stdout = self.oldout
 
 if __name__ == "__main__":
     ctx = zmq.Context()
