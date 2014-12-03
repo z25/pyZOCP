@@ -195,6 +195,7 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * int: the variable
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         * min: minimal value
         * max: maximal value
         * step: step value used by increments and decrements
@@ -216,6 +217,7 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * int: the variable
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         * min: minimal value
         * max: maximal value
         * step: step value used by increments and decrements
@@ -237,6 +239,7 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * int: the variable
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         * min: minimal value
         * max: maximal value
         * step: step value used by increments and decrements
@@ -258,6 +261,7 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * int: the variable
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         """
         self._cur_obj[name] = {'value': bl, 'typeHint': 'bool', 'access':access }
         self._on_modified(data={name: self._cur_obj[name]})
@@ -270,6 +274,7 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * s: the variable
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         """
         self._cur_obj[name] = {'value': s, 'typeHint': 'string', 'access':access }
         self._on_modified(data={name: self._cur_obj[name]})
@@ -282,6 +287,7 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * vec2f: A list containing two floats
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         * min: minimal value
         * max: maximal value
         * step: step value used by increments and decrements
@@ -303,6 +309,7 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * vec3f: A list containing three floats
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         * min: minimal value
         * max: maximal value
         * step: step value used by increments and decrements
@@ -324,6 +331,7 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * vec4f: A list containing four floats
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         * min: minimal value
         * max: maximal value
         * step: step value used by increments and decrements
