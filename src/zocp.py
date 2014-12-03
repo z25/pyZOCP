@@ -20,6 +20,7 @@ import json
 import zmq
 import uuid
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -373,9 +374,17 @@ class ZOCP(Pyre):
         """
         Subscribe a receiver to an emitter
         """
-        if not peer in self.subscriptions:
-            self.subscriptions.update({peer: {}})
-        self.subscriptions[peer].update({emitter: receiver})
+        forward_request = False
+        if emitter != "__all__" or receiver is not None:
+            # check if this should be forwarded
+            pattern = re.compile("^(.*)@([0-9a-f]{32})$")
+            if pattern.match(receiver) and pattern.match(emitter):
+                forward_request = True
+
+        if not forward_request:
+            if not peer in self.subscriptions:
+                self.subscriptions.update({peer: {}})
+            self.subscriptions[peer].update({emitter: receiver})
 
         msg = json.dumps({'SUB': [emitter, receiver]})
         self.whisper(peer, msg.encode('utf-8'))
@@ -384,10 +393,18 @@ class ZOCP(Pyre):
         """
         Unsubscribe a receiver from an emitter
         """
-        if peer in self.subscriptions:
-            self.subscriptions[peer].pop(emitter)
-            if not any(self.subscriptions[peer]):
-                self.subscriptions.pop[peer]
+        forward_request = False
+        if emitter != "__all__" or receiver is not None:
+            # check if this should be forwarded
+            pattern = re.compile("^(.*)@([0-9a-f]{32})$")
+            if pattern.match(receiver) and pattern.match(emitter):
+                forward_request = True
+
+        if not forward_request:
+            if peer in self.subscriptions:
+                self.subscriptions[peer].pop(emitter)
+                if not any(self.subscriptions[peer]):
+                    self.subscriptions.pop(peer)
 
         msg = json.dumps({'UNSUB': [emitter, receiver]})
         self.whisper(peer, msg.encode('utf-8'))
@@ -576,16 +593,68 @@ class ZOCP(Pyre):
         return
 
     def _handle_SUB(self, data, peer, grp):
+        emitter = data[0]
+        receiver = data[1]
+
+        if emitter is not None and receiver is not None:
+            # check if this should be forwarded
+            import re
+            pattern = re.compile("^(.*)@([0-9a-f]{32})$")
+            matches = pattern.findall(receiver)
+            if len(matches) > 0:
+                receiver_peer = matches[0][1]
+                receiver = matches[0][0]
+                if receiver_peer == self.get_uuid().hex:
+                    matches = pattern.findall(emitter)
+                    if len(matches) > 0:
+                        emitter_peer = matches[0][1]
+                        emitter = matches[0][0]
+
+                        peer = uuid.UUID(emitter_peer)
+
+                        logger.debug("ZOCP SUB     : forwarding subscription request: %s" % data)
+                        self.peer_subscribe(peer, emitter, receiver)
+                        return
+
+                logger.warning("ZOCP SUB     : invalid subscription request: %s" % data)
+                return
+
         if not peer in self.subscribers:
             self.subscribers.update({peer: {}})
-        self.subscribers[peer].update({data[0]: data[1]})
+        self.subscribers[peer].update({emitter: receiver})
         return
 
     def _handle_UNSUB(self, data, peer, grp):
+        emitter = data[0]
+        receiver = data[1]
+
+        if emitter is not None and receiver is not None:
+            # check if this should be forwarded
+            import re
+            pattern = re.compile("^(.*)@([0-9a-f]{32})$")
+            matches = pattern.findall(receiver)
+            if len(matches) > 0:
+                receiver_peer = matches[0][1]
+                receiver = matches[0][0]
+                if receiver_peer == self.get_uuid().hex:
+                    matches = pattern.findall(emitter)
+                    if len(matches) > 0:
+                        emitter_peer = matches[0][1]
+                        emitter = matches[0][0]
+
+                        peer = uuid.UUID(emitter_peer)
+
+                        logger.debug("ZOCP UNSUB   : forwarding unsubscription request: %s" % data)
+                        self.peer_unsubscribe(peer, emitter, receiver)
+                        return
+
+                logger.warning("ZOCP UNSUB   : invalid unsubscription request: %s" % data)
+                return
+
         if peer in self.subscribers:
-            self.subscribers[peer].pop(data[0])
+            self.subscribers[peer].pop(emitter)
             if not any(self.subscribers[peer]):
-                self.subscribers.pop[peer]
+                self.subscribers.pop(peer)
         return
 
     def _handle_REP(self, data, peer, grp):
