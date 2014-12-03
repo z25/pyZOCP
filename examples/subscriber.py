@@ -2,6 +2,7 @@
 
 from zocp import ZOCP
 import socket
+import logging
 
 class SubscriberNode(ZOCP):
     # Constructor
@@ -25,6 +26,9 @@ class SubscriberNode(ZOCP):
     
         
 if __name__ == '__main__':
+    zl = logging.getLogger("zocp")
+    zl.setLevel(logging.DEBUG)
+
     z = SubscriberNode("subscriber@%s" % socket.gethostname())
     z.run()
     print("FINISH")

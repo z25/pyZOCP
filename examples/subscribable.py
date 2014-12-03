@@ -2,6 +2,7 @@
 
 from zocp import ZOCP
 import socket
+import logging
 from threading import Event, Thread
 
 class SubscribableNode(ZOCP):
@@ -73,6 +74,9 @@ class SubscribableNode(ZOCP):
     
         
 if __name__ == '__main__':
+    zl = logging.getLogger("zocp")
+    zl.setLevel(logging.DEBUG)
+
     z = SubscribableNode("subscribable@%s" % socket.gethostname())
     z.run()
     print("FINISH")
