@@ -200,7 +200,7 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': int, 'typeHint': 'int', 'access':access }
+        self._cur_obj[name] = {'value': int, 'typeHint': 'int', 'access':access, 'subscribers': [] }
         if min:
             self._cur_obj[name]['min'] = min
         if max:
@@ -222,7 +222,7 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': flt, 'typeHint': 'float', 'access':access }
+        self._cur_obj[name] = {'value': flt, 'typeHint': 'float', 'access':access, 'subscribers': [] }
         if min:
             self._cur_obj[name]['min'] = min
         if max:
@@ -244,7 +244,7 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': pct, 'typeHint': 'percent', 'access':access }
+        self._cur_obj[name] = {'value': pct, 'typeHint': 'percent', 'access':access, 'subscribers': [] }
         if min:
             self._cur_obj[name]['min'] = min
         if max:
@@ -263,7 +263,7 @@ class ZOCP(Pyre):
         * access: 'r' and/or 'w' as to if it's readable and writeable state
                   'e' if the value can be emitted and/or 's' if it can be received
         """
-        self._cur_obj[name] = {'value': bl, 'typeHint': 'bool', 'access':access }
+        self._cur_obj[name] = {'value': bl, 'typeHint': 'bool', 'access':access, 'subscribers': [] }
         self._on_modified(data={name: self._cur_obj[name]})
 
     def register_string(self, name, s, access='r'):
@@ -276,7 +276,7 @@ class ZOCP(Pyre):
         * access: 'r' and/or 'w' as to if it's readable and writeable state
                   'e' if the value can be emitted and/or 's' if it can be received
         """
-        self._cur_obj[name] = {'value': s, 'typeHint': 'string', 'access':access }
+        self._cur_obj[name] = {'value': s, 'typeHint': 'string', 'access':access, 'subscribers': [] }
         self._on_modified(data={name: self._cur_obj[name]})
 
     def register_vec2f(self, name, vec2f, access='r', min=None, max=None, step=None):
@@ -292,7 +292,7 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': vec2f, 'typeHint': 'vec2f', 'access':access }
+        self._cur_obj[name] = {'value': vec2f, 'typeHint': 'vec2f', 'access':access, 'subscribers': [] }
         if min:
             self._cur_obj[name]['min'] = min
         if max:
@@ -314,7 +314,7 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': vec3f, 'typeHint': 'vec3f', 'access':access }
+        self._cur_obj[name] = {'value': vec3f, 'typeHint': 'vec3f', 'access':access, 'subscribers': [] }
         if min:
             self._cur_obj[name]['min'] = min
         if max:
@@ -336,7 +336,7 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': vec4f, 'typeHint': 'vec4f', 'access':access }
+        self._cur_obj[name] = {'value': vec4f, 'typeHint': 'vec4f', 'access':access, 'subscribers': [] }
         if min:
             self._cur_obj[name]['min'] = min
         if max:
@@ -627,6 +627,13 @@ class ZOCP(Pyre):
                 logger.warning("ZOCP SUB     : invalid subscription request: %s" % data)
                 return
 
+        if emitter != "__all__":
+            subscriber = (peer.hex, receiver)
+            subscribers = self.capability[emitter]["subscribers"]
+            if subscriber not in subscribers:
+                subscribers.append(subscriber)
+                self._on_modified( {emitter: {"subscribers": subscribers}} )
+
         if not peer in self.subscribers:
             self.subscribers.update({peer: {}})
         self.subscribers[peer].update({emitter: receiver})
@@ -658,6 +665,13 @@ class ZOCP(Pyre):
 
                 logger.warning("ZOCP UNSUB   : invalid unsubscription request: %s" % data)
                 return
+
+        if emitter != "__all__":
+            subscriber = (peer.hex, receiver)
+            subscribers = self.capability[emitter]["subscribers"]
+            if subscriber in subscribers:
+                subscribers.remove(subscriber)
+                self._on_modified( {emitter: {"subscribers": subscribers}} )
 
         if peer in self.subscribers:
             self.subscribers[peer].pop(emitter)
