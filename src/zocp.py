@@ -378,12 +378,12 @@ class ZOCP(Pyre):
         msg = json.dumps({'CALL': [method, args]})
         self.whisper(peer, msg.encode('utf-8'))
 
-    def peer_subscribe(self, peer, emitter="__all__", receiver=None):
+    def peer_subscribe(self, peer, emitter=None, receiver=None):
         """
         Subscribe a receiver to an emitter
         """
         forward_request = False
-        if emitter != "__all__" or receiver is not None:
+        if emitter is not None or receiver is not None:
             # check if this should be forwarded
             pattern = re.compile("^(.*)@([0-9a-f]{32})$")
             if pattern.match(receiver) and pattern.match(emitter):
@@ -408,12 +408,12 @@ class ZOCP(Pyre):
         msg = json.dumps({'SUB': [emitter, receiver]})
         self.whisper(peer, msg.encode('utf-8'))
 
-    def peer_unsubscribe(self, peer, emitter="__all__", receiver=None):
+    def peer_unsubscribe(self, peer, emitter=None, receiver=None):
         """
         Unsubscribe a receiver from an emitter
         """
         forward_request = False
-        if emitter != "__all__" or receiver is not None:
+        if emitter is not None or receiver is not None:
             # check if this should be forwarded
             pattern = re.compile("^(.*)@([0-9a-f]{32})$")
             if pattern.match(receiver) and pattern.match(emitter):
@@ -441,7 +441,7 @@ class ZOCP(Pyre):
         msg = json.dumps({'SIG': [emitter, data]})
 
         for subscriber in self.subscribers:
-            if ("__all__" in self.subscribers[subscriber] or
+            if (None in self.subscribers[subscriber] or
                     emitter in self.subscribers[subscriber]):
                 self.whisper(subscriber, msg.encode('utf-8'))
 
@@ -640,7 +640,7 @@ class ZOCP(Pyre):
                 logger.warning("ZOCP SUB     : invalid subscription request: %s" % data)
                 return
 
-        if emitter != "__all__":
+        if emitter is not None:
             # update subscribers in capability tree
             subscriber = (peer.hex, receiver)
             subscribers = self.capability[emitter]["subscribers"]
@@ -682,7 +682,7 @@ class ZOCP(Pyre):
                 logger.warning("ZOCP UNSUB   : invalid unsubscription request: %s" % data)
                 return
 
-        if emitter != "__all__":
+        if emitter is not None:
             # update subscribers in capability tree
             subscriber = (peer.hex, receiver)
             subscribers = self.capability[emitter]["subscribers"]
@@ -722,7 +722,7 @@ class ZOCP(Pyre):
                     if receiver is not None and self.capability[receiver]['value'] != value:
                         self.emit_signal(receiver, value)
 
-            if "__all__" in subscription or emitter in subscription:
+            if None in subscription or emitter in subscription:
                 self.on_peer_signaled(peer, data)
 
     def _on_modified(self, data, peer=None):
@@ -745,7 +745,7 @@ class ZOCP(Pyre):
                     # no need to send the signal to the node that
                     # modified the value
                     if subscriber != peer and (
-                            "__all__" in self.subscribers[subscriber] or
+                            None in self.subscribers[subscriber] or
                             name in self.subscribers[subscriber]):
                         self.whisper(subscriber, msg.encode('utf-8'))
                 data = {}
@@ -756,7 +756,7 @@ class ZOCP(Pyre):
                 # inform node that are subscribed to one or more
                 # updated capabilities that they have changed
                 if subscriber != peer and (
-                        "__all__" in self.subscribers[subscriber] or
+                        None in self.subscribers[subscriber] or
                         len(set(self.subscribers[subscriber]) & set(data)) > 0):
                     self.whisper(subscriber, msg)
 
