@@ -390,9 +390,15 @@ class ZOCP(Pyre):
                 forward_request = True
 
         if not forward_request:
+            # update subscribers in capability tree
             if not peer in self.subscriptions:
                 self.subscriptions.update({peer: {}})
             self.subscriptions[peer].update({emitter: receiver})
+
+            # check if the peer capability is known
+            if receiver is not None:
+                if receiver not in self.peers_capabilities:
+                    self.peer_get(peer, [receiver])
 
         msg = json.dumps({'SUB': [emitter, receiver]})
         self.whisper(peer, msg.encode('utf-8'))
@@ -409,6 +415,7 @@ class ZOCP(Pyre):
                 forward_request = True
 
         if not forward_request:
+            # update subscribers in capability tree
             if peer in self.subscriptions:
                 self.subscriptions[peer].pop(emitter)
                 if not any(self.subscriptions[peer]):
@@ -628,6 +635,7 @@ class ZOCP(Pyre):
                 return
 
         if emitter != "__all__":
+            # update subscribers in capability tree
             subscriber = (peer.hex, receiver)
             subscribers = self.capability[emitter]["subscribers"]
             if subscriber not in subscribers:
@@ -667,6 +675,7 @@ class ZOCP(Pyre):
                 return
 
         if emitter != "__all__":
+            # update subscribers in capability tree
             subscriber = (peer.hex, receiver)
             subscribers = self.capability[emitter]["subscribers"]
             if subscriber in subscribers:
@@ -687,7 +696,8 @@ class ZOCP(Pyre):
         self.on_peer_modified(peer, data)
 
     def _handle_SIG(self, data, peer, grp):
-        self.peers_capabilities[peer][data[0]].update({'value': data[1]})
+        if data[0] in self.peers_capabilities[peer]:
+            self.peers_capabilities[peer][data[0]].update({'value': data[1]})
 
         if peer in self.subscriptions:
             subscription = self.subscriptions[peer]
