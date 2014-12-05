@@ -391,9 +391,14 @@ class ZOCP(Pyre):
 
         if not forward_request:
             # update subscribers in capability tree
-            if not peer in self.subscriptions:
-                self.subscriptions.update({peer: {}})
-            self.subscriptions[peer].update({emitter: receiver})
+            peer_subscriptions = {}
+            if peer in self.subscriptions:
+                peer_subscriptions = self.subscriptions[peer]
+            if not emitter in peer_subscriptions:
+                peer_subscriptions[emitter] = [receiver]
+            elif not receiver in peer_subscriptions[emitter]:
+                peer_subscriptions[emitter].append(receiver)
+            self.subscriptions[peer] = peer_subscriptions
 
             # check if the peer capability is known
             if receiver is not None:
@@ -416,8 +421,12 @@ class ZOCP(Pyre):
 
         if not forward_request:
             # update subscribers in capability tree
-            if peer in self.subscriptions:
-                self.subscriptions[peer].pop(emitter)
+            if (peer in self.subscriptions and
+                    emitter in self.subscriptions[peer] and
+                    receiver in self.subscriptions[peer][emitter]):
+                self.subscriptions[peer][emitter].remove(receiver)
+                if not any(self.subscriptions[peer][emitter]):
+                    self.subscriptions[peer].pop(emitter)
                 if not any(self.subscriptions[peer]):
                     self.subscriptions.pop(peer)
 
@@ -696,19 +705,20 @@ class ZOCP(Pyre):
         self.on_peer_modified(peer, data)
 
     def _handle_SIG(self, data, peer, grp):
-        if data[0] in self.peers_capabilities[peer]:
-            self.peers_capabilities[peer][data[0]].update({'value': data[1]})
+        [emitter, value] = data
+        if emitter in self.peers_capabilities[peer]:
+            self.peers_capabilities[peer][emitter].update({'value': value})
 
         if peer in self.subscriptions:
             subscription = self.subscriptions[peer]
-            if data[0] in subscription:
+            if emitter in subscription:
                 # propagate the signal if it changes the value of this node
-                receiver = subscription[data[0]]
-                new_value = data[1]
-                if self.capability[receiver]['value'] != new_value:
-                    self.emit_signal(receiver, new_value)
+                receivers = subscription[emitter]
+                for receiver in receivers:
+                    if receiver is not None and self.capability[receiver]['value'] != value:
+                        self.emit_signal(receiver, value)
 
-            if "__all__" in subscription or data[0] in subscription:
+            if "__all__" in subscription or emitter in subscription:
                 self.on_peer_signaled(peer, data)
 
     def _on_modified(self, data, peer=None):
