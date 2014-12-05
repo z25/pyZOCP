@@ -398,7 +398,7 @@ class ZOCP(Pyre):
             # check if the peer capability is known
             if receiver is not None:
                 if receiver not in self.peers_capabilities:
-                    self.peer_get(peer, [receiver])
+                    self.peer_get(peer, {receiver: {}})
 
         msg = json.dumps({'SUB': [emitter, receiver]})
         self.whisper(peer, msg.encode('utf-8'))
