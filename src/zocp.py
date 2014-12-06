@@ -383,15 +383,23 @@ class ZOCP(Pyre):
         Subscribe a receiver to an emitter
 
         Arguments are:
-        * peer: uuid of the peer to subscribe to
+        * peer: id of the peer to subscribe to
         * emitter: capability name of the emitter on the subscribee
                    if None, all capabilities will emit to the same receiver
         * receiver: capability name of the receiver on the subscriber
                     if None, the signal will not auto-update a receiver capability,
                     but the signal will still arrive at the subscriber
+
+        A third node can instruct two nodes to subscribe to one another as follows:
+        The node sends the subscriber a peer_subscribe request, appending the id
+        of the subscribee to the name of the emitter, and the id of the subscriber
+        to the name of the receiver:
+        * emitter: emitter-name@subscribee-id
+        * receiver: receiver-name@subscriber-id
+        The subscriber node forwards the subscription request to the subscribee
         """
         forward_request = False
-        if emitter is not None or receiver is not None:
+        if emitter is not None and receiver is not None:
             # check if this should be forwarded
             pattern = re.compile("^(.*)@([0-9a-f]{32})$")
             if pattern.match(receiver) and pattern.match(emitter):
@@ -421,15 +429,23 @@ class ZOCP(Pyre):
         Unsubscribe a receiver from an emitter
 
         Arguments are:
-        * peer: uuid of the peer to subscribe to
+        * peer: id of the peer to unsubscribe to
         * emitter: capability name of the emitter on the subscribee
                    if None, all capabilities will emit to the same receiver
         * receiver: capability name of the receiver on the subscriber
                     if None, the signal will not auto-update a receiver capability,
                     but the signal will still arrive at the subscriber
+
+        A third node can instruct two nodes to unsubscribe to one another as follows:
+        The node sends the subscriber a peer_subscribe request, appending the id
+        of the subscribee to the name of the emitter, and the id of the subscriber
+        to the name of the receiver:
+        * emitter: emitter-name@subscribee-id
+        * receiver: receiver-name@subscriber-id
+        The subscriber node forwards the subscription request to the subscribee
         """
         forward_request = False
-        if emitter is not None or receiver is not None:
+        if emitter is not None and receiver is not None:
             # check if this should be forwarded
             pattern = re.compile("^(.*)@([0-9a-f]{32})$")
             if pattern.match(receiver) and pattern.match(emitter):
@@ -451,7 +467,11 @@ class ZOCP(Pyre):
 
     def emit_signal(self, emitter, data):
         """
-        Signal all subscribed receivers
+        Update the value of the emitter and signal all subscribed receivers
+
+        Arguments are:
+        * emitter: name of the emitting capability
+        * data: value
         """
         self.capability[emitter]['value'] = data
         msg = json.dumps({'SIG': [emitter, data]})
