@@ -381,6 +381,14 @@ class ZOCP(Pyre):
     def peer_subscribe(self, peer, emitter=None, receiver=None):
         """
         Subscribe a receiver to an emitter
+
+        Arguments are:
+        * peer: uuid of the peer to subscribe to
+        * emitter: capability name of the emitter on the subscribee
+                   if None, all capabilities will emit to the same receiver
+        * receiver: capability name of the receiver on the subscriber
+                    if None, the signal will not auto-update a receiver capability,
+                    but the signal will still arrive at the subscriber
         """
         forward_request = False
         if emitter is not None or receiver is not None:
@@ -390,7 +398,7 @@ class ZOCP(Pyre):
                 forward_request = True
 
         if not forward_request:
-            # update subscribers in capability tree
+            # update self.subscriptions
             peer_subscriptions = {}
             if peer in self.subscriptions:
                 peer_subscriptions = self.subscriptions[peer]
@@ -411,6 +419,14 @@ class ZOCP(Pyre):
     def peer_unsubscribe(self, peer, emitter=None, receiver=None):
         """
         Unsubscribe a receiver from an emitter
+
+        Arguments are:
+        * peer: uuid of the peer to subscribe to
+        * emitter: capability name of the emitter on the subscribee
+                   if None, all capabilities will emit to the same receiver
+        * receiver: capability name of the receiver on the subscriber
+                    if None, the signal will not auto-update a receiver capability,
+                    but the signal will still arrive at the subscriber
         """
         forward_request = False
         if emitter is not None or receiver is not None:
@@ -420,7 +436,7 @@ class ZOCP(Pyre):
                 forward_request = True
 
         if not forward_request:
-            # update subscribers in capability tree
+            # update self.subscribtions
             if (peer in self.subscriptions and
                     emitter in self.subscriptions[peer] and
                     receiver in self.subscriptions[peer][emitter]):
@@ -477,6 +493,13 @@ class ZOCP(Pyre):
     #def on_unsubscribe(self, peer, src, dst):
 
     def on_peer_modified(self, peer, data, *args, **kwargs):
+        """
+        Called when a peer signals that its capability tree is modified.
+
+        peer: id of peer that made the change
+        data: changed data, formatted as a partial capability dictionary, containing
+              only the changed part(s) of the capability tree of the node
+        """
         logger.debug("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
 
     def on_peer_replied(self, peer, data, *args, **kwargs):
@@ -486,8 +509,10 @@ class ZOCP(Pyre):
         """
         Called when a peer signals that some of its data is modified.
 
-        data: changed data
         peer: id of peer whose data has been changed
+        data: changed data, formatted as [emitter, value]
+              emitter: name of the emitter on the subscribee
+              value: value of the emitter
         """
         logger.debug("ZOCP PEER SIGNALED: %s modified %s" %(peer.hex, data))
 
@@ -495,8 +520,9 @@ class ZOCP(Pyre):
         """
         Called when some data is modified on this node.
 
-        data: changed data
-        peer: id of peer who made the change
+        peer: id of peer that made the change
+        data: changed data, formatted as a partial capability dictionary, containing
+              only the changed part(s) of the capability tree of the node
         """
         if peer:
             logger.debug("ZOCP modified by %s with %s" %(peer.hex, data))
