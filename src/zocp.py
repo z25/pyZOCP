@@ -420,7 +420,7 @@ class ZOCP(Pyre):
     def on_peer_signaled(self, peer, name, data, *args, **kwargs):
         logger.debug("ZOCP PEER SIGNALED: %s modified %s" %(name, data))
 
-    def on_modified(self, data, peer=None, name=None):
+    def on_modified(self, peer, name, data, *args, **kwargs):
         """
         Called when some data is modified on this node.
 
@@ -535,7 +535,7 @@ class ZOCP(Pyre):
 
     def _handle_SET(self, data, peer, name, grp):
         self.capability = dict_merge(self.capability, data)
-        self.on_modified(data, peer, name)
+        self.on_modified(peer, name, data)
 
     def _handle_CALL(self, data, peer, name, grp):
         return
@@ -544,12 +544,12 @@ class ZOCP(Pyre):
     def _handle_SUB(self, data, peer, name, grp):
         return
         self.capability = dict_merge(self.capability, data)
-        self.on_modified(data, peer, name)
+        self.on_modified(peer, name, data)
 
     def _handle_UNSUB(self, data, peer, name, grp):
         return
         self.capability = dict_merge(self.capability, data)
-        self.on_modified(data, peer, name)
+        self.on_modified(peer, name, data)
 
     def _handle_REP(self, data, peer, name, grp):
         return
@@ -569,7 +569,7 @@ class ZOCP(Pyre):
                 new_data = {}
                 new_data[key] = data
                 data = new_data
-        self.on_modified(data, peer, name)
+        self.on_modified(peer, name, data)
         if self._running:
             self.shout("ZOCP", json.dumps({ 'MOD' :data}).encode('utf-8'))
 
