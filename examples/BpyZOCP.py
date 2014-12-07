@@ -263,7 +263,7 @@ class BpyZOCP(ZOCP):
                 print("WE FOUND A BGE NODE, sending camera data")
                 self._register_camera(c)
 
-    def on_modified(self, data, peer=None, name=None):
+    def on_modified(self, peer, name, data, *args, **kwargs):
         pass
 
 #         if data.get('objects'):
