@@ -94,6 +94,8 @@ class ZOCP(Pyre):
         self.poller = zmq.Poller()
         self.poller.register(self.inbox, zmq.POLLIN)
 
+        self.subscriber_pattern = re.compile("^(.*)@([0-9a-f]{32})$")
+
     #########################################
     # Node methods. 
     #########################################
@@ -401,8 +403,7 @@ class ZOCP(Pyre):
         forward_request = False
         if emitter is not None and receiver is not None:
             # check if this should be forwarded
-            pattern = re.compile("^(.*)@([0-9a-f]{32})$")
-            if pattern.match(receiver) and pattern.match(emitter):
+            if self.subscriber_pattern.match(receiver) and self.subscriber_pattern.match(emitter):
                 forward_request = True
 
         if not forward_request:
@@ -447,8 +448,7 @@ class ZOCP(Pyre):
         forward_request = False
         if emitter is not None and receiver is not None:
             # check if this should be forwarded
-            pattern = re.compile("^(.*)@([0-9a-f]{32})$")
-            if pattern.match(receiver) and pattern.match(emitter):
+            if self.subscriber_pattern.match(receiver) and self.subscriber_pattern.match(emitter):
                 forward_request = True
 
         if not forward_request:
@@ -668,13 +668,11 @@ class ZOCP(Pyre):
 
         if emitter is not None and receiver is not None:
             # check if this should be forwarded
-            import re
-            pattern = re.compile("^(.*)@([0-9a-f]{32})$")
-            matches = pattern.findall(receiver)
+            matches = self.subscriber_pattern.findall(receiver)
             if len(matches) > 0:
                 [receiver, receiver_peer] = matches[0]
                 if receiver_peer == self.get_uuid().hex:
-                    matches = pattern.findall(emitter)
+                    matches = self.subscriber_pattern.findall(emitter)
                     if len(matches) > 0:
                         [emitter, emitter_peer] = matches[0]
                         peer = uuid.UUID(emitter_peer)
@@ -710,13 +708,11 @@ class ZOCP(Pyre):
 
         if emitter is not None and receiver is not None:
             # check if this should be forwarded
-            import re
-            pattern = re.compile("^(.*)@([0-9a-f]{32})$")
-            matches = pattern.findall(receiver)
+            matches = self.subscriber_pattern.findall(receiver)
             if len(matches) > 0:
                 [receiver, receiver_peer] = matches[0]
                 if receiver_peer == self.get_uuid().hex:
-                    matches = pattern.findall(emitter)
+                    matches = self.subscriber_pattern.findall(emitter)
                     if len(matches) > 0:
                         [emitter, emitter_peer] = matches[0]
                         peer = uuid.UUID(emitter_peer)
