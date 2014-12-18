@@ -517,6 +517,7 @@ class ZOCP(Pyre):
         Called when a peer signals that its capability tree is modified.
 
         peer: id of peer that made the change
+        name: name of peer that made the change
         data: changed data, formatted as a partial capability dictionary, containing
               only the changed part(s) of the capability tree of the node
         """
@@ -525,11 +526,48 @@ class ZOCP(Pyre):
     def on_peer_replied(self, peer, name, data, *args, **kwargs):
         logger.debug("ZOCP PEER REPLIED : %s modified %s" %(name, data))
 
+    def on_peer_subscribed(self, peer, name, data, *args, **kwargs):
+        """
+        Called when a peer subscribes to an emitter on this node.
+
+        peer: id of peer that subscribed
+        name: name of peer that subscribed
+        data: changed data, formatted as [emitter, receiver]
+              emitter: name of the emitter on this node
+              receiver: name of the receiver on the subscriber
+        """
+        [emitter, receiver] = data
+        if emitter is None:
+            logger.debug("ZOCP PEER SUBSCRIBED: %s subscribed to all emitters" %(name))
+        elif receiver is None:
+            logger.debug("ZOCP PEER SUBSCRIBED: %s subscribed to %s" %(name, emitter))
+        else:
+            logger.debug("ZOCP PEER SUBSCRIBED: %s subscribed %s to %s" %(name, receiver, emitter))
+
+    def on_peer_unsubscribed(self, peer, name, data, *args, **kwargs):
+        """
+        Called when a peer unsubscribes from an emitter on this node.
+
+        peer: id of peer that unsubscribed
+        name: name of peer that unsubscribed
+        data: changed data, formatted as [emitter, receiver]
+              emitter: name of the emitter on this node
+              receiver: name of the receiver on the subscriber
+        """
+        [emitter, receiver] = data
+        if emitter is None:
+            logger.debug("ZOCP PEER UNSUBSCRIBED: %s unsubscribed from all emitters" %(name))
+        elif receiver is None:
+            logger.debug("ZOCP PEER UNSUBSCRIBED: %s unsubscribed from %s" %(name, emitter))
+        else:
+            logger.debug("ZOCP PEER UNSUBSCRIBED: %s unsubscribed %s from %s" %(name, receiver, emitter))
+
     def on_peer_signaled(self, peer, name, data, *args, **kwargs):
         """
         Called when a peer signals that some of its data is modified.
 
         peer: id of peer whose data has been changed
+        name: name of peer whose data has been changed
         data: changed data, formatted as [emitter, value]
               emitter: name of the emitter on the subscribee
               value: value of the emitter
@@ -541,6 +579,7 @@ class ZOCP(Pyre):
         Called when some data is modified on this node.
 
         peer: id of peer that made the change
+        name: name of peer that made the change
         data: changed data, formatted as a partial capability dictionary, containing
               only the changed part(s) of the capability tree of the node
         """
@@ -703,6 +742,7 @@ class ZOCP(Pyre):
             peer_subscribers[emitter].append(receiver)
         self.subscribers[peer] = peer_subscribers
 
+        self.on_peer_subscribed(peer, name, data)
         return
 
     def _handle_UNSUB(self, data, peer, name, grp):
@@ -743,6 +783,7 @@ class ZOCP(Pyre):
             if not any(self.subscribers[peer]):
                 self.subscribers.pop(peer)
 
+            self.on_peer_unsubscribed(peer, name, data)
         return
 
     def _handle_REP(self, data, peer, name, grp):
