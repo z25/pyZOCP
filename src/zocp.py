@@ -411,16 +411,16 @@ class ZOCP(Pyre):
     #def on_subscribe(self, peer, src, dst):
     #def on_unsubscribe(self, peer, src, dst):
 
-    def on_peer_modified(self, peer, data, *args, **kwargs):
-        logger.debug("ZOCP PEER MODIFIED: %s modified %s" %(peer.hex, data))
+    def on_peer_modified(self, peer, name, data, *args, **kwargs):
+        logger.debug("ZOCP PEER MODIFIED: %s modified %s" %(name, data))
 
-    def on_peer_replied(self, peer, data, *args, **kwargs):
-        logger.debug("ZOCP PEER REPLIED : %s modified %s" %(peer.hex, data))
+    def on_peer_replied(self, peer, name, data, *args, **kwargs):
+        logger.debug("ZOCP PEER REPLIED : %s modified %s" %(name, data))
 
-    def on_peer_signaled(self, peer, data, *args, **kwargs):
-        logger.debug("ZOCP PEER SIGNALED: %s modified %s" %(peer.hex, data))
+    def on_peer_signaled(self, peer, name, data, *args, **kwargs):
+        logger.debug("ZOCP PEER SIGNALED: %s modified %s" %(name, data))
 
-    def on_modified(self, data, peer=None):
+    def on_modified(self, peer, name, data, *args, **kwargs):
         """
         Called when some data is modified on this node.
 
@@ -428,7 +428,9 @@ class ZOCP(Pyre):
         peer: id of peer who made the change
         """
         if peer:
-            logger.debug("ZOCP modified by %s with %s" %(peer.hex, data))
+            if not name:
+                name = peer.hex
+            logger.debug("ZOCP modified by %s with %s" %(name, data))
         else:
             logger.debug("ZOCP modified by %s with %s" %("self", data))
 
@@ -491,21 +493,21 @@ class ZOCP(Pyre):
         else:
             for method in msg.keys():
                 if method   == 'GET':
-                    self._handle_GET(msg[method], peer, grp)
+                    self._handle_GET(msg[method], peer, name, grp)
                 elif method == 'SET':
-                    self._handle_SET(msg[method], peer, grp)
+                    self._handle_SET(msg[method], peer, name, grp)
                 elif method == 'CALL':
-                    self._handle_CALL(msg[method], peer, grp)
+                    self._handle_CALL(msg[method], peer, name, grp)
                 elif method == 'SUB':
-                    self._handle_SUB(msg[method], peer, grp)
+                    self._handle_SUB(msg[method], peer, name, grp)
                 elif method == 'UNSUB':
-                    self._handle_UNSUB(msg[method], peer, grp)
+                    self._handle_UNSUB(msg[method], peer, name, grp)
                 elif method == 'REP':
-                    self._handle_REP(msg[method], peer, grp)
+                    self._handle_REP(msg[method], peer, name, grp)
                 elif method == 'MOD':
-                    self._handle_MOD(msg[method], peer, grp)
+                    self._handle_MOD(msg[method], peer, name, grp)
                 elif method == 'SIG':
-                    self._handle_SIG(msg[method], peer, grp)
+                    self._handle_SIG(msg[method], peer, name, grp)
                 else:
                     try:
                         func = getattr(self, 'handle_'+method)
@@ -513,7 +515,7 @@ class ZOCP(Pyre):
                     except:
                         raise Exception('No %s method on resource: %s' %(method,object))
 
-    def _handle_GET(self, data, peer, grp=None):
+    def _handle_GET(self, data, peer, name, grp=None):
         """
         If data is empty just return the complete capabilities object
         else fetch every item requested and return them
@@ -531,35 +533,35 @@ class ZOCP(Pyre):
             self.peer_set(peer, data)
             self.whisper(peer, json.dumps({ 'MOD' :ret}).encode('utf-8'))
 
-    def _handle_SET(self, data, peer, grp):
+    def _handle_SET(self, data, peer, name, grp):
         self.capability = dict_merge(self.capability, data)
-        self.on_modified(data, peer)
+        self.on_modified(peer, name, data)
 
-    def _handle_CALL(self, data, peer, grp):
+    def _handle_CALL(self, data, peer, name, grp):
         return
         self.peers_capabilities[peer] = dict_merge(self.peers_capabilities.get(peer), data)
 
-    def _handle_SUB(self, data, peer, grp):
+    def _handle_SUB(self, data, peer, name, grp):
         return
         self.capability = dict_merge(self.capability, data)
-        self.on_modified(data, peer)
+        self.on_modified(peer, name, data)
 
-    def _handle_UNSUB(self, data, peer, grp):
+    def _handle_UNSUB(self, data, peer, name, grp):
         return
         self.capability = dict_merge(self.capability, data)
-        self.on_modified(data, peer)
+        self.on_modified(peer, name, data)
 
-    def _handle_REP(self, data, peer, grp):
+    def _handle_REP(self, data, peer, name, grp):
         return
 
-    def _handle_MOD(self, data, peer, grp):
+    def _handle_MOD(self, data, peer, name, grp):
         self.peers_capabilities[peer] = dict_merge(self.peers_capabilities.get(peer), data)
-        self.on_peer_modified(peer, data)
+        self.on_peer_modified(peer, name, data)
 
-    def _handle_SIG(self, data, peer, grp):
+    def _handle_SIG(self, data, peer, name, grp):
         return
 
-    def _on_modified(self, data, peer=None):
+    def _on_modified(self, data, peer=None, name=None):
         if self._cur_obj_keys:
             # the last key in the _cur_obj_keys list equals 
             # the first in data so skip the last key
@@ -567,7 +569,7 @@ class ZOCP(Pyre):
                 new_data = {}
                 new_data[key] = data
                 data = new_data
-        self.on_modified(data, peer)
+        self.on_modified(peer, name, data)
         if self._running:
             self.shout("ZOCP", json.dumps({ 'MOD' :data}).encode('utf-8'))
 
