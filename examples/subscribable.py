@@ -33,14 +33,14 @@ class SubscribableNode(ZOCP):
         super().stop()
 
 
-    def on_modified(self, data, peer=None):
+    def on_modified(self, peer, name, data, *args, **kwargs):
         if self._running and peer:
             for key in data:
                 if 'value' in data[key]:
                     self.receive_value(key)
 
                 
-    def on_peer_signaled(self, peer, data, *args, **kwargs):
+    def on_peer_signaled(self, peer, name, data, *args, **kwargs):
         if self._running and peer:
             self.receive_value(data[0])
 
