@@ -808,7 +808,7 @@ class ZOCP(Pyre):
                         self.emit_signal(receiver, value)
 
             if None in subscription or emitter in subscription:
-                self.on_peer_signaled(peer, data)
+                self.on_peer_signaled(peer, name, data)
 
     def _on_modified(self, data, peer=None, name=None):
         if self._cur_obj_keys:
