@@ -380,7 +380,7 @@ class ZOCP(Pyre):
         msg = json.dumps({'CALL': [method, args]})
         self.whisper(peer, msg.encode('utf-8'))
 
-    def peer_subscribe(self, peer, emitter=None, receiver=None):
+    def signal_subscribe(self, peer, emitter=None, receiver=None):
         """
         Subscribe a receiver to an emitter
 
@@ -393,7 +393,7 @@ class ZOCP(Pyre):
                     but the signal will still arrive at the subscriber
 
         A third node can instruct two nodes to subscribe to one another as follows:
-        The node sends the subscriber a peer_subscribe request, appending the id
+        The node sends the subscriber a signal_subscribe request, appending the id
         of the subscribee to the name of the emitter, and the id of the subscriber
         to the name of the receiver:
         * emitter: emitter-name@subscribee-id
@@ -425,7 +425,7 @@ class ZOCP(Pyre):
         msg = json.dumps({'SUB': [emitter, receiver]})
         self.whisper(peer, msg.encode('utf-8'))
 
-    def peer_unsubscribe(self, peer, emitter=None, receiver=None):
+    def signal_unsubscribe(self, peer, emitter=None, receiver=None):
         """
         Unsubscribe a receiver from an emitter
 
@@ -438,7 +438,7 @@ class ZOCP(Pyre):
                     but the signal will still arrive at the subscriber
 
         A third node can instruct two nodes to unsubscribe to one another as follows:
-        The node sends the subscriber a peer_subscribe request, appending the id
+        The node sends the subscriber a signal_subscribe request, appending the id
         of the subscribee to the name of the emitter, and the id of the subscriber
         to the name of the receiver:
         * emitter: emitter-name@subscribee-id
@@ -719,7 +719,7 @@ class ZOCP(Pyre):
                         peer = uuid.UUID(emitter_peer)
 
                         logger.debug("ZOCP SUB     : forwarding subscription request: %s" % data)
-                        self.peer_subscribe(peer, emitter, receiver)
+                        self.signal_subscribe(peer, emitter, receiver)
                         return
 
                 logger.warning("ZOCP SUB     : invalid subscription request: %s" % data)
@@ -760,7 +760,7 @@ class ZOCP(Pyre):
                         peer = uuid.UUID(emitter_peer)
 
                         logger.debug("ZOCP UNSUB   : forwarding unsubscription request: %s" % data)
-                        self.peer_unsubscribe(peer, emitter, receiver)
+                        self.signal_unsubscribe(peer, emitter, receiver)
                         return
 
                 logger.warning("ZOCP UNSUB   : invalid unsubscription request: %s" % data)
