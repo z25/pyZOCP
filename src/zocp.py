@@ -380,7 +380,7 @@ class ZOCP(Pyre):
         msg = json.dumps({'CALL': [method, args]})
         self.whisper(peer, msg.encode('utf-8'))
 
-    def signal_subscribe(self, peer, emitter=None, receiver=None):
+    def signal_subscribe(self, recv_peer, receiver, emit_peer, emitter):
         """
         Subscribe a receiver to an emitter
 
@@ -400,30 +400,25 @@ class ZOCP(Pyre):
         * receiver: receiver-name@subscriber-id
         The subscriber node forwards the subscription request to the subscribee
         """
-        forward_request = False
-        if emitter is not None and receiver is not None:
-            # check if this should be forwarded
-            if self.subscriber_pattern.match(receiver) and self.subscriber_pattern.match(emitter):
-                forward_request = True
-
-        if not forward_request:
-            # update self.subscriptions
+        own_id = self.get_uuid()
+        if recv_peer == own_id:
+            # we are the receiver so register the emitter
             peer_subscriptions = {}
-            if peer in self.subscriptions:
-                peer_subscriptions = self.subscriptions[peer]
+            if emit_peer in self.subscriptions:
+                peer_subscriptions = self.subscriptions[emit_peer]
             if not emitter in peer_subscriptions:
                 peer_subscriptions[emitter] = [receiver]
             elif not receiver in peer_subscriptions[emitter]:
                 peer_subscriptions[emitter].append(receiver)
-            self.subscriptions[peer] = peer_subscriptions
+            self.subscriptions[emit_peer] = peer_subscriptions
 
             # check if the peer capability is known
             if receiver is not None:
                 if receiver not in self.peers_capabilities:
-                    self.peer_get(peer, {receiver: {}})
+                    self.peer_get(recv_peer, {receiver: {}})
 
-        msg = json.dumps({'SUB': [emitter, receiver]})
-        self.whisper(peer, msg.encode('utf-8'))
+        msg = json.dumps({'SUB': [emit_peer.hex, emitter, recv_peer.hex, receiver]})
+        self.whisper(emit_peer, msg.encode('utf-8'))
 
     def signal_unsubscribe(self, peer, emitter=None, receiver=None):
         """
@@ -705,44 +700,40 @@ class ZOCP(Pyre):
         return
 
     def _handle_SUB(self, data, peer, name, grp):
-        [emitter, receiver] = data
+        [emit_peer, emitter, recv_peer, receiver] = data
 
-        if emitter is not None and receiver is not None:
-            # check if this should be forwarded
-            matches = self.subscriber_pattern.findall(receiver)
-            if len(matches) > 0:
-                [receiver, receiver_peer] = matches[0]
-                if receiver_peer == self.get_uuid().hex:
-                    matches = self.subscriber_pattern.findall(emitter)
-                    if len(matches) > 0:
-                        [emitter, emitter_peer] = matches[0]
-                        peer = uuid.UUID(emitter_peer)
+        own_id = self.get_uuid()
+        if emit_peer is not own_id and recv_peer is not own_id:
+            # subscription requests are always initially send to the
+            # emitter peer. Recv_peer can only be matched to own_id if
+            # a subscription to a receiver is done by the emitter.
+            logger.warning("ZOCP SUB     : invalid subscription request: %s" % data)
+            return
 
-                        logger.debug("ZOCP SUB     : forwarding subscription request: %s" % data)
-                        self.signal_subscribe(peer, emitter, receiver)
-                        return
-
-                logger.warning("ZOCP SUB     : invalid subscription request: %s" % data)
-                return
+        if recv_peer is not peer:
+            # check if this should be forwarded (third party subscription request)
+            logger.debug("ZOCP SUB     : forwarding subscription request: %s" % data)
+            self.signal_subscribe(recv_peer, emit_peer, emitter, recv_peer, receiver)
+            return
 
         if emitter is not None:
             # update subscribers in capability tree
-            subscriber = (peer.hex, receiver)
+            subscriber = (recv_peer.hex, receiver)
             subscribers = self.capability[emitter]["subscribers"]
             if subscriber not in subscribers:
                 subscribers.append(subscriber)
                 self._on_modified(data={emitter: {"subscribers": subscribers}})
 
         peer_subscribers = {}
-        if peer in self.subscribers:
-            peer_subscribers = self.subscribers[peer]
+        if recv_peer in self.subscribers:
+            peer_subscribers = self.subscribers[recv_peer]
         if not emitter in peer_subscribers:
             peer_subscribers[emitter] = [receiver]
         elif not receiver in peer_subscribers[emitter]:
             peer_subscribers[emitter].append(receiver)
-        self.subscribers[peer] = peer_subscribers
+        self.subscribers[recv_peer] = peer_subscribers
 
-        self.on_peer_subscribed(peer, name, data)
+        self.on_peer_subscribed(recv_peer, name, data)
         return
 
     def _handle_UNSUB(self, data, peer, name, grp):
