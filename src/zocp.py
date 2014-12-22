@@ -20,7 +20,6 @@ import json
 import zmq
 import uuid
 import logging
-import re
 
 logger = logging.getLogger(__name__)
 
@@ -93,8 +92,6 @@ class ZOCP(Pyre):
         self.join("ZOCP")
         self.poller = zmq.Poller()
         self.poller.register(self.inbox, zmq.POLLIN)
-
-        self.subscriber_pattern = re.compile("^(.*)@([0-9a-f]{32})$")
 
     #########################################
     # Node methods. 
