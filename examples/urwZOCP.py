@@ -756,7 +756,7 @@ class urwZOCP(zocp.ZOCP):
         if nd:
             nd[0].original_widget.update(self.peers_capabilities.get(peer, {}))
 
-    def on_peer_signaled(self, peer, data, *args, **kwargs):
+    def on_peer_signaled(self, peer, name, data, *args, **kwargs):
         print("ZOCP SIGNALED: %s modified %s" %(peer.hex, data))
         nd = self.znodes.get(peer)
         if nd:
