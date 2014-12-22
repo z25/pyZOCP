@@ -385,20 +385,17 @@ class ZOCP(Pyre):
         Subscribe a receiver to an emitter
 
         Arguments are:
-        * peer: id of the peer to subscribe to
-        * emitter: capability name of the emitter on the subscribee
-                   if None, all capabilities will emit to the same receiver
-        * receiver: capability name of the receiver on the subscriber
-                    if None, the signal will not auto-update a receiver capability,
-                    but the signal will still arrive at the subscriber
+        * recv_peer: id of the receiving peer
+        * receiver: capability id of the receiver on the receiving peer
+        * emit_peer: id of the peer to subscribe to
+        * emitter: capability name of the emitter on the peer to
+                   subscribe to. if None, all capabilities will emit to
+                   the receiver
 
-        A third node can instruct two nodes to subscribe to one another as follows:
-        The node sends the subscriber a signal_subscribe request, appending the id
-        of the subscribee to the name of the emitter, and the id of the subscriber
-        to the name of the receiver:
-        * emitter: emitter-name@subscribee-id
-        * receiver: receiver-name@subscriber-id
-        The subscriber node forwards the subscription request to the subscribee
+        A third node can instruct two nodes to subscribe to one another
+        by specifying the ids of the peers. The subscription request
+        is than send to the emitter node which in turn forwards the
+        subscribtion request to the receiver node.
         """
         own_id = self.get_uuid()
         if recv_peer == own_id:
