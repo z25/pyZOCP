@@ -531,7 +531,7 @@ class ZOCP(Pyre):
               emitter: name of the emitter on this node
               receiver: name of the receiver on the subscriber
         """
-        [emitter, receiver] = data
+        [emit_peer, emitter, recv_peer, receiver] = data
         if emitter is None:
             logger.debug("ZOCP PEER SUBSCRIBED: %s subscribed to all emitters" %(name))
         elif receiver is None:
@@ -549,7 +549,7 @@ class ZOCP(Pyre):
               emitter: name of the emitter on this node
               receiver: name of the receiver on the subscriber
         """
-        [emitter, receiver] = data
+        [emit_peer, emitter, recv_peer, receiver] = data
         if emitter is None:
             logger.debug("ZOCP PEER UNSUBSCRIBED: %s unsubscribed from all emitters" %(name))
         elif receiver is None:
@@ -703,17 +703,19 @@ class ZOCP(Pyre):
         [emit_peer, emitter, recv_peer, receiver] = data
 
         own_id = self.get_uuid()
-        if emit_peer is not own_id and recv_peer is not own_id:
+        recv_peer = uuid.UUID(recv_peer)
+        emit_peer = uuid.UUID(emit_peer)
+        if emit_peer != own_id and recv_peer != own_id:
             # subscription requests are always initially send to the
             # emitter peer. Recv_peer can only be matched to own_id if
             # a subscription to a receiver is done by the emitter.
             logger.warning("ZOCP SUB     : invalid subscription request: %s" % data)
             return
 
-        if recv_peer is not peer:
+        if recv_peer != peer:
             # check if this should be forwarded (third party subscription request)
             logger.debug("ZOCP SUB     : forwarding subscription request: %s" % data)
-            self.signal_subscribe(recv_peer, emit_peer, emitter, recv_peer, receiver)
+            self.signal_subscribe(emit_peer, emitter, recv_peer, receiver)
             return
 
         if emitter is not None:
