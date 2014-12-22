@@ -83,11 +83,12 @@ class ZOCPTest(unittest.TestCase):
         self.node2.signal_subscribe(self.node2.get_uuid(), "TestRecvFloat", self.node1.get_uuid(), "TestEmitFloat")
         # give time for dispersion
         time.sleep(0.5)
+        self.node1.run_once()
         #print(self.node2.subscriptions)
         #print(self.node1.subscribers)
         # {UUID('c2d0f94c-1998-4e7a-87d9-f2b3ff287404'): {'TestEmitFloat': ['TestRecvFloat']}}
         self.assertIn("TestRecvFloat", self.node2.subscriptions[self.node1.get_uuid()]["TestEmitFloat"])
-        self.assertIn("TestEmitFloat", self.node1.subscribers[self.node2.get_uuid()]["TestRecvFloat"])
+        self.assertIn("TestRecvFloat", self.node1.subscribers[self.node2.get_uuid()]["TestEmitFloat"])
 
     def test_zfinal(self):
         global inst_count
