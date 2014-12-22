@@ -7,10 +7,10 @@ class ZOCPTest(unittest.TestCase):
     
     def setUp(self, *args, **kwargs):
         ctx = zmq.Context()
-        self.node1 = zocp.ZOCP(ctx)
+        self.node1 = zocp.ZOCP(ctx=ctx)
         self.node1.set_header("X-TEST", "1")
         self.node1.set_name("node1")
-        self.node2 = zocp.ZOCP(ctx)
+        self.node2 = zocp.ZOCP(ctx=ctx)
         self.node2.set_header("X-TEST", "1")
         self.node2.set_name("node2")
         self.node1.start()
@@ -75,6 +75,20 @@ class ZOCPTest(unittest.TestCase):
         self.assertIn("TEST", self.node2.get_peer_groups())
     # end test_get_peer_groups
 
+    def test_signal_subscribe(self):
+        self.node1.register_float("TestEmitFloat", 1.0, 'rwe')
+        self.node2.register_float("TestRecvFloat", 1.0, 'rws')
+        # give time for dispersion
+        time.sleep(0.5)
+        self.node2.signal_subscribe(self.node2.get_uuid(), "TestRecvFloat", self.node1.get_uuid(), "TestEmitFloat")
+        # give time for dispersion
+        time.sleep(0.5)
+        #print(self.node2.subscriptions)
+        #print(self.node1.subscribers)
+        # {UUID('c2d0f94c-1998-4e7a-87d9-f2b3ff287404'): {'TestEmitFloat': ['TestRecvFloat']}}
+        self.assertIn("TestRecvFloat", self.node2.subscriptions[self.node1.get_uuid()]["TestEmitFloat"])
+        self.assertIn("TestEmitFloat", self.node1.subscribers[self.node2.get_uuid()]["TestRecvFloat"])
+
     def test_zfinal(self):
         global inst_count
         inst_count = 1
@@ -89,3 +103,4 @@ if __name__ == '__main__':
         unittest.main()
     except Exception as a:
         print(a)
+
