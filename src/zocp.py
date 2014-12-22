@@ -399,8 +399,7 @@ class ZOCP(Pyre):
         is then sent to the emitter node which in turn forwards the
         subscribtion request to the receiver node.
         """
-        own_id = self.get_uuid()
-        if recv_peer == own_id:
+        if recv_peer == self.get_uuid():
             # we are the receiver so register the emitter
             peer_subscriptions = {}
             if emit_peer in self.subscriptions:
@@ -437,8 +436,7 @@ class ZOCP(Pyre):
         is then sent to the emitter node which in turn forwards the
         subscribtion request to the receiver node.
         """
-        own_id = self.get_uuid()
-        if recv_peer == own_id:
+        if recv_peer == self.get_uuid():
             # we are the receiver so unregister the emitter
             if (emit_peer in self.subscriptions and
                     emitter in self.subscriptions[emit_peer] and
@@ -694,12 +692,12 @@ class ZOCP(Pyre):
     def _handle_SUB(self, data, peer, name, grp):
         [emit_peer, emitter, recv_peer, receiver] = data
 
-        own_id = self.get_uuid()
+        id = self.get_uuid()
         recv_peer = uuid.UUID(recv_peer)
         emit_peer = uuid.UUID(emit_peer)
-        if emit_peer != own_id and recv_peer != own_id:
+        if emit_peer != id and recv_peer != id:
             # subscription requests are always initially send to the
-            # emitter peer. Recv_peer can only be matched to own_id if
+            # emitter peer. Recv_peer can only be matched to our id if
             # a subscription to a receiver is done by the emitter.
             logger.warning("ZOCP SUB     : invalid subscription request: %s" % data)
             return
@@ -733,12 +731,12 @@ class ZOCP(Pyre):
     def _handle_UNSUB(self, data, peer, name, grp):
         [emit_peer, emitter, recv_peer, receiver] = data
 
-        own_id = self.get_uuid()
+        id = self.get_uuid()
         recv_peer = uuid.UUID(recv_peer)
         emit_peer = uuid.UUID(emit_peer)
-        if emit_peer != own_id and recv_peer != own_id:
+        if emit_peer != id and recv_peer != id:
             # unsubscription requests are always initially send to the
-            # emitter peer. Recv_peer can only be matched to own_id if
+            # emitter peer. Recv_peer can only be matched to our id if
             # a subscription to a receiver is done by the emitter.
             logger.warning("ZOCP UNSUB   : invalid unsubscription request: %s" % data)
             return
