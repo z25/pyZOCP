@@ -385,16 +385,18 @@ class ZOCP(Pyre):
         Subscribe a receiver to an emitter
 
         Arguments are:
-        * recv_peer: id of the receiving peer
-        * receiver: capability id of the receiver on the receiving peer
+        * recv_peer: id of the receiving peer.
+        * receiver: capability id of the receiver on the receiving peer.
+                    If None, no capability on the receiving peer is
+                    updated, but a on_peer_signal event is still fired.
         * emit_peer: id of the peer to subscribe to
         * emitter: capability name of the emitter on the peer to
-                   subscribe to. if None, all capabilities will emit to
+                   subscribe to. If None, all capabilities will emit to
                    the receiver
 
         A third node can instruct two nodes to subscribe to one another
         by specifying the ids of the peers. The subscription request
-        is than send to the emitter node which in turn forwards the
+        is then sent to the emitter node which in turn forwards the
         subscribtion request to the receiver node.
         """
         own_id = self.get_uuid()
@@ -417,45 +419,38 @@ class ZOCP(Pyre):
         msg = json.dumps({'SUB': [emit_peer.hex, emitter, recv_peer.hex, receiver]})
         self.whisper(emit_peer, msg.encode('utf-8'))
 
-    def signal_unsubscribe(self, peer, emitter=None, receiver=None):
+    def signal_unsubscribe(self, recv_peer, receiver, emit_peer, emitter):
         """
         Unsubscribe a receiver from an emitter
 
         Arguments are:
-        * peer: id of the peer to unsubscribe to
-        * emitter: capability name of the emitter on the subscribee
-                   if None, all capabilities will emit to the same receiver
-        * receiver: capability name of the receiver on the subscriber
-                    if None, the signal will not auto-update a receiver capability,
-                    but the signal will still arrive at the subscriber
+        * recv_peer: id of the receiving peer
+        * receiver: capability id of the receiver on the receiving peer, or
+                    None if no receiver was specified when subscribing
+        * emit_peer: id of the peer to unsubscribe from
+        * emitter: capability name of the emitter on the peer to
+                   unsubscribe from, or None if no emitter was specified
+                   during subscription
 
-        A third node can instruct two nodes to unsubscribe to one another as follows:
-        The node sends the subscriber a signal_subscribe request, appending the id
-        of the subscribee to the name of the emitter, and the id of the subscriber
-        to the name of the receiver:
-        * emitter: emitter-name@subscribee-id
-        * receiver: receiver-name@subscriber-id
-        The subscriber node forwards the subscription request to the subscribee
+        A third node can instruct two nodes to unsubscribe from one another
+        by specifying the ids of the peers. The subscription request
+        is then sent to the emitter node which in turn forwards the
+        subscribtion request to the receiver node.
         """
-        forward_request = False
-        if emitter is not None and receiver is not None:
-            # check if this should be forwarded
-            if self.subscriber_pattern.match(receiver) and self.subscriber_pattern.match(emitter):
-                forward_request = True
+        own_id = self.get_uuid()
+        if recv_peer == own_id:
+            # we are the receiver so unregister the emitter
+            if (emit_peer in self.subscriptions and
+                    emitter in self.subscriptions[emit_peer] and
+                    receiver in self.subscriptions[emit_peer][emitter]):
+                self.subscriptions[emit_peer][emitter].remove(receiver)
+                if not any(self.subscriptions[emit_peer][emitter]):
+                    self.subscriptions[emit_peer].pop(emitter)
+                if not any(self.subscriptions[emit_peer]):
+                    self.subscriptions.pop(emit_peer)
 
-        if not forward_request:
-            # update self.subscribtions
-            if (peer in self.subscriptions and
-                    emitter in self.subscriptions[peer] and
-                    receiver in self.subscriptions[peer][emitter]):
-                self.subscriptions[peer][emitter].remove(receiver)
-                if not any(self.subscriptions[peer][emitter]):
-                    self.subscriptions[peer].pop(emitter)
-                if not any(self.subscriptions[peer]):
-                    self.subscriptions.pop(peer)
-
-        msg = json.dumps({'UNSUB': [emitter, receiver]})
-        self.whisper(peer, msg.encode('utf-8'))
+        msg = json.dumps({'UNSUB': [emit_peer.hex, emitter, recv_peer.hex, receiver]})
+        self.whisper(emit_peer, msg.encode('utf-8'))
 
     def emit_signal(self, emitter, data):
         """
@@ -736,42 +731,40 @@ class ZOCP(Pyre):
         return
 
     def _handle_UNSUB(self, data, peer, name, grp):
-        [emitter, receiver] = data
+        [emit_peer, emitter, recv_peer, receiver] = data
 
-        if emitter is not None and receiver is not None:
-            # check if this should be forwarded
-            matches = self.subscriber_pattern.findall(receiver)
-            if len(matches) > 0:
-                [receiver, receiver_peer] = matches[0]
-                if receiver_peer == self.get_uuid().hex:
-                    matches = self.subscriber_pattern.findall(emitter)
-                    if len(matches) > 0:
-                        [emitter, emitter_peer] = matches[0]
-                        peer = uuid.UUID(emitter_peer)
+        own_id = self.get_uuid()
+        recv_peer = uuid.UUID(recv_peer)
+        emit_peer = uuid.UUID(emit_peer)
+        if emit_peer != own_id and recv_peer != own_id:
+            # unsubscription requests are always initially send to the
+            # emitter peer. Recv_peer can only be matched to own_id if
+            # a subscription to a receiver is done by the emitter.
+            logger.warning("ZOCP UNSUB   : invalid unsubscription request: %s" % data)
+            return
 
-                        logger.debug("ZOCP UNSUB   : forwarding unsubscription request: %s" % data)
-                        self.signal_unsubscribe(peer, emitter, receiver)
-                        return
-
-                logger.warning("ZOCP UNSUB   : invalid unsubscription request: %s" % data)
-                return
+        if recv_peer != peer:
+            # check if this should be forwarded (third party unsubscription request)
+            logger.debug("ZOCP UNSUB   : forwarding unsubscription request: %s" % data)
+            self.signal_unsubscribe(emit_peer, emitter, recv_peer, receiver)
+            return
 
         if emitter is not None:
             # update subscribers in capability tree
-            subscriber = (peer.hex, receiver)
+            subscriber = (recv_peer.hex, receiver)
             subscribers = self.capability[emitter]["subscribers"]
             if subscriber in subscribers:
                 subscribers.remove(subscriber)
                 self._on_modified(data={emitter: {"subscribers": subscribers}})
 
-        if (peer in self.subscribers and
-                emitter in self.subscribers[peer] and
-                receiver in self.subscribers[peer][emitter]):
-            self.subscribers[peer][emitter].remove(receiver)
-            if not any(self.subscribers[peer][emitter]):
-                self.subscribers[peer].pop(emitter)
-            if not any(self.subscribers[peer]):
-                self.subscribers.pop(peer)
+        if (recv_peer in self.subscribers and
+                emitter in self.subscribers[recv_peer] and
+                receiver in self.subscribers[recv_peer][emitter]):
+            self.subscribers[recv_peer][emitter].remove(receiver)
+            if not any(self.subscribers[recv_peer][emitter]):
+                self.subscribers[recv_peer].pop(emitter)
+            if not any(self.subscribers[recv_peer]):
+                self.subscribers.pop(recv_peer)
 
             self.on_peer_unsubscribed(peer, name, data)
         return
