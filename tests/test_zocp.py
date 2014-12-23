@@ -79,14 +79,13 @@ class ZOCPTest(unittest.TestCase):
         self.node1.register_float("TestEmitFloat", 1.0, 'rwe')
         self.node2.register_float("TestRecvFloat", 1.0, 'rws')
         # give time for dispersion
-        time.sleep(0.5)
+        self.node1.run_once()
+        self.node2.run_once()
         self.node2.signal_subscribe(self.node2.get_uuid(), "TestRecvFloat", self.node1.get_uuid(), "TestEmitFloat")
         # give time for dispersion
         time.sleep(0.5)
         self.node1.run_once()
-        #print(self.node2.subscriptions)
-        #print(self.node1.subscribers)
-        # {UUID('c2d0f94c-1998-4e7a-87d9-f2b3ff287404'): {'TestEmitFloat': ['TestRecvFloat']}}
+        # subscriptions structure: {Emitter nodeID: {'EmitterID': ['Local ReceiverID']}}
         self.assertIn("TestRecvFloat", self.node2.subscriptions[self.node1.get_uuid()]["TestEmitFloat"])
         self.assertIn("TestRecvFloat", self.node1.subscribers[self.node2.get_uuid()]["TestEmitFloat"])
         # unsubscribe
@@ -100,34 +99,21 @@ class ZOCPTest(unittest.TestCase):
         self.node1.register_float("TestEmitFloat", 1.0, 'rwe')
         self.node2.register_float("TestRecvFloat", 1.0, 'rws')
         # give time for dispersion
-        time.sleep(1)
+        time.sleep(0.5)
         self.node1.run_once()
-        time.sleep(35.5)
         self.node2.signal_subscribe(self.node2.get_uuid(), "TestRecvFloat", self.node1.get_uuid(), "TestEmitFloat")
         # give time for dispersion
-        time.sleep(5.5)
+        time.sleep(0.1)
         self.node1.run_once()
         self.node1.emit_signal("TestEmitFloat", 2.0)
+        time.sleep(0.1)
         self.node2.run_once()
         self.assertEqual(2.0, self.node2.capability["TestRecvFloat"]["value"])
         # unsubscribe
         self.node2.signal_unsubscribe(self.node2.get_uuid(), "TestRecvFloat", self.node1.get_uuid(), "TestEmitFloat")
-        time.sleep(5.5)
+        time.sleep(0.1)
         self.node1.run_once()
-        time.sleep(5.5)
-
-    def test_zfinal(self):
-        global inst_count
-        inst_count = 1
-        self.assertTrue(True)
-    # end test_zfinal
-# end PyreTest
+# end ZOCPTest
 
 if __name__ == '__main__':
-    inst_count = 0
-
-    try:
-        unittest.main()
-    except Exception as a:
-        print(a)
-
+    unittest.main()
