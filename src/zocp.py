@@ -78,11 +78,11 @@ def dict_merge(a, b, path=None):
 
 class ZOCP(Pyre):
 
-    def __init__(self, capability={}, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_header("X-ZOCP", "1")
         self.peers_capabilities = {} # peer id : capability data
-        self.capability = capability
+        self.capability = kwargs.get('capability', {})
         self._cur_obj = self.capability
         self._cur_obj_keys = ()
         self._running = False
@@ -599,8 +599,10 @@ class ZOCP(Pyre):
         while(self._running):
             try:
                 items = dict(self.poller.poll(timeout))
-                if self.inbox in items and items[self.inbox] == zmq.POLLIN:
-                    self.get_message()
+                while(len(items) > 0):
+                    for fd, ev in items.items():
+                        if self.inbox == fd and ev == zmq.POLLIN:
+                            self.get_message()
             except (KeyboardInterrupt, SystemExit):
                 break
         self.stop()
