@@ -89,6 +89,12 @@ class ZOCPTest(unittest.TestCase):
         # {UUID('c2d0f94c-1998-4e7a-87d9-f2b3ff287404'): {'TestEmitFloat': ['TestRecvFloat']}}
         self.assertIn("TestRecvFloat", self.node2.subscriptions[self.node1.get_uuid()]["TestEmitFloat"])
         self.assertIn("TestRecvFloat", self.node1.subscribers[self.node2.get_uuid()]["TestEmitFloat"])
+        # unsubscribe
+        self.node2.signal_unsubscribe(self.node2.get_uuid(), "TestRecvFloat", self.node1.get_uuid(), "TestEmitFloat")
+        time.sleep(0.5)
+        self.node1.run_once()
+        self.assertNotIn("TestRecvFloat", self.node2.subscriptions.get(self.node1.get_uuid(), {}).get("TestEmitFloat", {}))
+        self.assertNotIn("TestRecvFloat", self.node1.subscribers.get(self.node2.get_uuid(), {}).get("TestEmitFloat", {}))
 
     def test_zfinal(self):
         global inst_count
