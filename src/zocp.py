@@ -80,6 +80,8 @@ class ZOCP(Pyre):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.subscriptions = {}
+        self.subscribers = {}
         self.set_header("X-ZOCP", "1")
         self.peers_capabilities = {} # peer id : capability data
         self.capability = kwargs.get('capability', {})
@@ -192,11 +194,12 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * int: the variable
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         * min: minimal value
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': int, 'typeHint': 'int', 'access':access }
+        self._cur_obj[name] = {'value': int, 'typeHint': 'int', 'access':access, 'subscribers': [] }
         if min:
             self._cur_obj[name]['min'] = min
         if max:
@@ -213,11 +216,12 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * int: the variable
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         * min: minimal value
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': flt, 'typeHint': 'float', 'access':access }
+        self._cur_obj[name] = {'value': flt, 'typeHint': 'float', 'access':access, 'subscribers': [] }
         if min:
             self._cur_obj[name]['min'] = min
         if max:
@@ -234,11 +238,12 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * int: the variable
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         * min: minimal value
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': pct, 'typeHint': 'percent', 'access':access }
+        self._cur_obj[name] = {'value': pct, 'typeHint': 'percent', 'access':access, 'subscribers': [] }
         if min:
             self._cur_obj[name]['min'] = min
         if max:
@@ -255,8 +260,9 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * int: the variable
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         """
-        self._cur_obj[name] = {'value': bl, 'typeHint': 'bool', 'access':access }
+        self._cur_obj[name] = {'value': bl, 'typeHint': 'bool', 'access':access, 'subscribers': [] }
         self._on_modified(data={name: self._cur_obj[name]})
 
     def register_string(self, name, s, access='r'):
@@ -267,8 +273,9 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * s: the variable
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         """
-        self._cur_obj[name] = {'value': s, 'typeHint': 'string', 'access':access }
+        self._cur_obj[name] = {'value': s, 'typeHint': 'string', 'access':access, 'subscribers': [] }
         self._on_modified(data={name: self._cur_obj[name]})
 
     def register_vec2f(self, name, vec2f, access='r', min=None, max=None, step=None):
@@ -279,11 +286,12 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * vec2f: A list containing two floats
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         * min: minimal value
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': vec2f, 'typeHint': 'vec2f', 'access':access }
+        self._cur_obj[name] = {'value': vec2f, 'typeHint': 'vec2f', 'access':access, 'subscribers': [] }
         if min:
             self._cur_obj[name]['min'] = min
         if max:
@@ -300,11 +308,12 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * vec3f: A list containing three floats
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         * min: minimal value
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': vec3f, 'typeHint': 'vec3f', 'access':access }
+        self._cur_obj[name] = {'value': vec3f, 'typeHint': 'vec3f', 'access':access, 'subscribers': [] }
         if min:
             self._cur_obj[name]['min'] = min
         if max:
@@ -321,11 +330,12 @@ class ZOCP(Pyre):
         * name: the name of the variable as how nodes can refer to it
         * vec4f: A list containing four floats
         * access: 'r' and/or 'w' as to if it's readable and writeable state
+                  'e' if the value can be emitted and/or 's' if it can be received
         * min: minimal value
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': vec4f, 'typeHint': 'vec4f', 'access':access }
+        self._cur_obj[name] = {'value': vec4f, 'typeHint': 'vec4f', 'access':access, 'subscribers': [] }
         if min:
             self._cur_obj[name]['min'] = min
         if max:
@@ -367,19 +377,92 @@ class ZOCP(Pyre):
         msg = json.dumps({'CALL': [method, args]})
         self.whisper(peer, msg.encode('utf-8'))
 
-    def peer_subscribe(self, peer, signal, sensor):
+    def signal_subscribe(self, recv_peer, receiver, emit_peer, emitter):
         """
-        Subscribe a sensor to a signal
-        """
-        msg = json.dumps({'SUB': [signal, sensor]})
-        self.whisper(peer, msg.encode('utf-8'))
+        Subscribe a receiver to an emitter
 
-    def peer_unsubscribe(self, peer, signal, sensor):
+        Arguments are:
+        * recv_peer: id of the receiving peer.
+        * receiver: capability id of the receiver on the receiving peer.
+                    If None, no capability on the receiving peer is
+                    updated, but a on_peer_signal event is still fired.
+        * emit_peer: id of the peer to subscribe to
+        * emitter: capability name of the emitter on the peer to
+                   subscribe to. If None, all capabilities will emit to
+                   the receiver
+
+        A third node can instruct two nodes to subscribe to one another
+        by specifying the ids of the peers. The subscription request
+        is then sent to the emitter node which in turn forwards the
+        subscribtion request to the receiver node.
         """
-        Unsubscribe a sensor from a signaller
+        if recv_peer == self.get_uuid():
+            # we are the receiver so register the emitter
+            peer_subscriptions = {}
+            if emit_peer in self.subscriptions:
+                peer_subscriptions = self.subscriptions[emit_peer]
+            if not emitter in peer_subscriptions:
+                peer_subscriptions[emitter] = [receiver]
+            elif not receiver in peer_subscriptions[emitter]:
+                peer_subscriptions[emitter].append(receiver)
+            self.subscriptions[emit_peer] = peer_subscriptions
+
+            # check if the peer capability is known
+            if receiver is not None:
+                if receiver not in self.peers_capabilities:
+                    self.peer_get(recv_peer, {receiver: {}})
+
+        msg = json.dumps({'SUB': [emit_peer.hex, emitter, recv_peer.hex, receiver]})
+        self.whisper(emit_peer, msg.encode('utf-8'))
+
+    def signal_unsubscribe(self, recv_peer, receiver, emit_peer, emitter):
         """
-        msg = json.dumps({'SUB': [signal, sensor]})
-        self.whisper(peer, msg.encode('utf-8'))
+        Unsubscribe a receiver from an emitter
+
+        Arguments are:
+        * recv_peer: id of the receiving peer
+        * receiver: capability id of the receiver on the receiving peer, or
+                    None if no receiver was specified when subscribing
+        * emit_peer: id of the peer to unsubscribe from
+        * emitter: capability name of the emitter on the peer to
+                   unsubscribe from, or None if no emitter was specified
+                   during subscription
+
+        A third node can instruct two nodes to unsubscribe from one another
+        by specifying the ids of the peers. The subscription request
+        is then sent to the emitter node which in turn forwards the
+        subscribtion request to the receiver node.
+        """
+        if recv_peer == self.get_uuid():
+            # we are the receiver so unregister the emitter
+            if (emit_peer in self.subscriptions and
+                    emitter in self.subscriptions[emit_peer] and
+                    receiver in self.subscriptions[emit_peer][emitter]):
+                self.subscriptions[emit_peer][emitter].remove(receiver)
+                if not any(self.subscriptions[emit_peer][emitter]):
+                    self.subscriptions[emit_peer].pop(emitter)
+                if not any(self.subscriptions[emit_peer]):
+                    self.subscriptions.pop(emit_peer)
+
+        msg = json.dumps({'UNSUB': [emit_peer.hex, emitter, recv_peer.hex, receiver]})
+        self.whisper(emit_peer, msg.encode('utf-8'))
+
+    def emit_signal(self, emitter, data):
+        """
+        Update the value of the emitter and signal all subscribed receivers
+
+        Arguments are:
+        * emitter: name of the emitting capability
+        * data: value
+        """
+        self.capability[emitter]['value'] = data
+        msg = json.dumps({'SIG': [emitter, data]})
+
+        for subscriber in self.subscribers:
+            if (None in self.subscribers[subscriber] or
+                    emitter in self.subscribers[subscriber]):
+                self.whisper(subscriber, msg.encode('utf-8'))
+
 
     #########################################
     # ZRE event methods. These can be overwritten
@@ -412,20 +495,75 @@ class ZOCP(Pyre):
     #def on_unsubscribe(self, peer, src, dst):
 
     def on_peer_modified(self, peer, name, data, *args, **kwargs):
+        """
+        Called when a peer signals that its capability tree is modified.
+
+        peer: id of peer that made the change
+        name: name of peer that made the change
+        data: changed data, formatted as a partial capability dictionary, containing
+              only the changed part(s) of the capability tree of the node
+        """
         logger.debug("ZOCP PEER MODIFIED: %s modified %s" %(name, data))
 
     def on_peer_replied(self, peer, name, data, *args, **kwargs):
         logger.debug("ZOCP PEER REPLIED : %s modified %s" %(name, data))
 
+    def on_peer_subscribed(self, peer, name, data, *args, **kwargs):
+        """
+        Called when a peer subscribes to an emitter on this node.
+
+        peer: id of peer that subscribed
+        name: name of peer that subscribed
+        data: changed data, formatted as [emitter, receiver]
+              emitter: name of the emitter on this node
+              receiver: name of the receiver on the subscriber
+        """
+        [emit_peer, emitter, recv_peer, receiver] = data
+        if emitter is None:
+            logger.debug("ZOCP PEER SUBSCRIBED: %s subscribed to all emitters" %(name))
+        elif receiver is None:
+            logger.debug("ZOCP PEER SUBSCRIBED: %s subscribed to %s" %(name, emitter))
+        else:
+            logger.debug("ZOCP PEER SUBSCRIBED: %s subscribed %s to %s" %(name, receiver, emitter))
+
+    def on_peer_unsubscribed(self, peer, name, data, *args, **kwargs):
+        """
+        Called when a peer unsubscribes from an emitter on this node.
+
+        peer: id of peer that unsubscribed
+        name: name of peer that unsubscribed
+        data: changed data, formatted as [emitter, receiver]
+              emitter: name of the emitter on this node
+              receiver: name of the receiver on the subscriber
+        """
+        [emit_peer, emitter, recv_peer, receiver] = data
+        if emitter is None:
+            logger.debug("ZOCP PEER UNSUBSCRIBED: %s unsubscribed from all emitters" %(name))
+        elif receiver is None:
+            logger.debug("ZOCP PEER UNSUBSCRIBED: %s unsubscribed from %s" %(name, emitter))
+        else:
+            logger.debug("ZOCP PEER UNSUBSCRIBED: %s unsubscribed %s from %s" %(name, receiver, emitter))
+
     def on_peer_signaled(self, peer, name, data, *args, **kwargs):
+        """
+        Called when a peer signals that some of its data is modified.
+
+        peer: id of peer whose data has been changed
+        name: name of peer whose data has been changed
+        data: changed data, formatted as [emitter, value]
+              emitter: name of the emitter on the subscribee
+              value: value of the emitter
+        """
         logger.debug("ZOCP PEER SIGNALED: %s modified %s" %(name, data))
 
     def on_modified(self, peer, name, data, *args, **kwargs):
         """
         Called when some data is modified on this node.
 
-        data: changed data
-        peer: id of peer who made the change
+        peer: id of peer that made the change
+        name: name of peer that made the change
+        data: changed data, formatted as a partial capability dictionary, containing
+              only the changed part(s) of the capability tree of the node
         """
         if peer:
             if not name:
@@ -462,6 +600,10 @@ class ZOCP(Pyre):
             return
 
         if type == "EXIT":
+            if peer in self.subscribers:
+                self.subscribers.pop(peer)
+            if peer in self.subscriptions:
+                self.subscriptions.pop(peer)
             self.on_peer_exit(peer, name, msg)
             self.peers_capabilities.pop(peer)
             return
@@ -472,6 +614,10 @@ class ZOCP(Pyre):
             return
 
         if type == "LEAVE":
+            #if peer in self.subscribers:
+            #    self.subscribers.pop(peer)
+            #if peer in self.subscriptions:
+            #    self.subscriptions.pop(peer)
             grp = msg.pop(0)
             self.on_peer_leave(peer, name, grp, msg)
             return
@@ -535,21 +681,88 @@ class ZOCP(Pyre):
 
     def _handle_SET(self, data, peer, name, grp):
         self.capability = dict_merge(self.capability, data)
-        self.on_modified(peer, name, data)
+        self._on_modified(data, peer, name)
 
     def _handle_CALL(self, data, peer, name, grp):
         return
-        self.peers_capabilities[peer] = dict_merge(self.peers_capabilities.get(peer), data)
 
     def _handle_SUB(self, data, peer, name, grp):
+        [emit_peer, emitter, recv_peer, receiver] = data
+
+        node_id = self.get_uuid()
+        recv_peer = uuid.UUID(recv_peer)
+        emit_peer = uuid.UUID(emit_peer)
+        if emit_peer != node_id and recv_peer != node_id:
+            # subscription requests are always initially send to the
+            # emitter peer. Recv_peer can only be matched to our id if
+            # a subscription to a receiver is done by the emitter.
+            logger.warning("ZOCP SUB     : invalid subscription request: %s" % data)
+            return
+
+        if recv_peer != peer:
+            # check if this should be forwarded (third party subscription request)
+            logger.debug("ZOCP SUB     : forwarding subscription request: %s" % data)
+            self.signal_subscribe(emit_peer, emitter, recv_peer, receiver)
+            return
+
+        if emitter is not None:
+            # update subscribers in capability tree
+            subscriber = (recv_peer.hex, receiver)
+            subscribers = self.capability[emitter]["subscribers"]
+            if subscriber not in subscribers:
+                subscribers.append(subscriber)
+                self._on_modified(data={emitter: {"subscribers": subscribers}})
+
+        peer_subscribers = {}
+        if recv_peer in self.subscribers:
+            peer_subscribers = self.subscribers[recv_peer]
+        if not emitter in peer_subscribers:
+            peer_subscribers[emitter] = [receiver]
+        elif not receiver in peer_subscribers[emitter]:
+            peer_subscribers[emitter].append(receiver)
+        self.subscribers[recv_peer] = peer_subscribers
+
+        self.on_peer_subscribed(recv_peer, name, data)
         return
-        self.capability = dict_merge(self.capability, data)
-        self.on_modified(peer, name, data)
 
     def _handle_UNSUB(self, data, peer, name, grp):
+        [emit_peer, emitter, recv_peer, receiver] = data
+
+        node_id = self.get_uuid()
+        recv_peer = uuid.UUID(recv_peer)
+        emit_peer = uuid.UUID(emit_peer)
+        if emit_peer != node_id and recv_peer != node_id:
+            # unsubscription requests are always initially send to the
+            # emitter peer. Recv_peer can only be matched to our id if
+            # a subscription to a receiver is done by the emitter.
+            logger.warning("ZOCP UNSUB   : invalid unsubscription request: %s" % data)
+            return
+
+        if recv_peer != peer:
+            # check if this should be forwarded (third party unsubscription request)
+            logger.debug("ZOCP UNSUB   : forwarding unsubscription request: %s" % data)
+            self.signal_unsubscribe(emit_peer, emitter, recv_peer, receiver)
+            return
+
+        if emitter is not None:
+            # update subscribers in capability tree
+            subscriber = (recv_peer.hex, receiver)
+            subscribers = self.capability[emitter]["subscribers"]
+            if subscriber in subscribers:
+                subscribers.remove(subscriber)
+                self._on_modified(data={emitter: {"subscribers": subscribers}})
+
+        if (recv_peer in self.subscribers and
+                emitter in self.subscribers[recv_peer] and
+                receiver in self.subscribers[recv_peer][emitter]):
+            self.subscribers[recv_peer][emitter].remove(receiver)
+            if not any(self.subscribers[recv_peer][emitter]):
+                self.subscribers[recv_peer].pop(emitter)
+            if not any(self.subscribers[recv_peer]):
+                self.subscribers.pop(recv_peer)
+
+            self.on_peer_unsubscribed(peer, name, data)
         return
-        self.capability = dict_merge(self.capability, data)
-        self.on_modified(peer, name, data)
 
     def _handle_REP(self, data, peer, name, grp):
         return
@@ -559,7 +772,21 @@ class ZOCP(Pyre):
         self.on_peer_modified(peer, name, data)
 
     def _handle_SIG(self, data, peer, name, grp):
-        return
+        [emitter, value] = data
+        if emitter in self.peers_capabilities[peer]:
+            self.peers_capabilities[peer][emitter].update({'value': value})
+
+        if peer in self.subscriptions:
+            subscription = self.subscriptions[peer]
+            if emitter in subscription:
+                # propagate the signal if it changes the value of this node
+                receivers = subscription[emitter]
+                for receiver in receivers:
+                    if receiver is not None and self.capability[receiver]['value'] != value:
+                        self.emit_signal(receiver, value)
+
+            if None in subscription or emitter in subscription:
+                self.on_peer_signaled(peer, name, data)
 
     def _on_modified(self, data, peer=None, name=None):
         if self._cur_obj_keys:
@@ -570,8 +797,31 @@ class ZOCP(Pyre):
                 new_data[key] = data
                 data = new_data
         self.on_modified(peer, name, data)
-        if self._running:
-            self.shout("ZOCP", json.dumps({ 'MOD' :data}).encode('utf-8'))
+
+        if len(data) == 1:
+            # if the only modification is a value change,
+            # emit a SIG instead of a MOD
+            name = list(data.keys())[0]
+            if len(data[name]) == 1 and 'value' in data[name]:
+                msg = json.dumps({'SIG': [name, data[name]['value']]})
+                for subscriber in self.subscribers:
+                    # no need to send the signal to the node that
+                    # modified the value
+                    if subscriber != peer and (
+                            None in self.subscribers[subscriber] or
+                            name in self.subscribers[subscriber]):
+                        self.whisper(subscriber, msg.encode('utf-8'))
+                data = {}
+
+        if any(data):
+            msg = json.dumps({ 'MOD' :data}).encode('utf-8')
+            for subscriber in self.subscribers:
+                # inform node that are subscribed to one or more
+                # updated capabilities that they have changed
+                if subscriber != peer and (
+                        None in self.subscribers[subscriber] or
+                        len(set(self.subscribers[subscriber]) & set(data)) > 0):
+                    self.whisper(subscriber, msg)
 
     def run_once(self, timeout=None):
         """

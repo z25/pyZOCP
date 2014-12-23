@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # Z25 Orchestror Control Protocol
 # Copyright (c) 2013, Stichting z25.org, All rights reserved.
 # Copyright (c) 2013, Arnaud Loonstra, All rights reserved.
@@ -639,6 +640,7 @@ class ZOCPNodeWidget(urwid.WidgetWrap):
         #self._widgets.append(urwid.Divider())
 
     def on_changed(self, wgt, value, name):
+        self.node_data[name].update({'value': value})
         dat = {name: {'value': value}}
         z.whisper(self.node_id, json.dumps({'SET': dat}).encode('utf-8'))
 
@@ -731,6 +733,8 @@ class urwZOCP(zocp.ZOCP):
             #index = len(cells.contents)
             #cells.contents.insert(index, (nd, ('given', 20)))
             self.cells.contents.append(self.znodes[peer])
+            
+        self.signal_subscribe(self.get_uuid(), None, peer, None)
 
     def on_peer_exit(self, peer, name, *args, **kwargs):
         print("ZOCP EXIT    : %s" %(name))
@@ -751,6 +755,12 @@ class urwZOCP(zocp.ZOCP):
         nd = self.znodes.get(peer)
         if nd:
             nd[0].original_widget.update(self.peers_capabilities.get(peer, {}))
+
+    def on_peer_signaled(self, peer, name, data, *args, **kwargs):
+        print("ZOCP SIGNALED: %s modified %s" %(peer.hex, data))
+        nd = self.znodes.get(peer)
+        if nd:
+            nd[0].original_widget.update()
 
     def run(self):
         self.start()
