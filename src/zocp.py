@@ -78,11 +78,11 @@ def dict_merge(a, b, path=None):
 
 class ZOCP(Pyre):
 
-    def __init__(self, capability={}, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_header("X-ZOCP", "1")
         self.peers_capabilities = {} # peer id : capability data
-        self.capability = capability
+        self.capability = kwargs.get('capability', {})
         self._cur_obj = self.capability
         self._cur_obj_keys = ()
         self._running = False
