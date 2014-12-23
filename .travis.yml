@@ -1,0 +1,15 @@
+language: python
+python:
+  - "2.7"
+  - "3.2"
+  - "3.3"
+  - "3.4"
+env:
+  - PYTHONPATH="src"
+# command to install dependencies
+install:
+ - 'pip install https://github.com/zeromq/pyre/archive/master.zip'
+branches:
+  only:
+    - master
+script: python tests/test_zocp.py
