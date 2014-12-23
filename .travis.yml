@@ -8,7 +8,8 @@ env:
   - PYTHONPATH="src"
 # command to install dependencies
 install:
- - 'pip install https://github.com/zeromq/pyre/archive/master.zip'
+  - 'pip install pyzmq'
+  - 'pip install https://github.com/zeromq/pyre/archive/master.zip'
 branches:
   only:
     - master
