@@ -689,10 +689,10 @@ class ZOCP(Pyre):
     def _handle_SUB(self, data, peer, name, grp):
         [emit_peer, emitter, recv_peer, receiver] = data
 
-        id = self.get_uuid()
+        node_id = self.get_uuid()
         recv_peer = uuid.UUID(recv_peer)
         emit_peer = uuid.UUID(emit_peer)
-        if emit_peer != id and recv_peer != id:
+        if emit_peer != node_id and recv_peer != node_id:
             # subscription requests are always initially send to the
             # emitter peer. Recv_peer can only be matched to our id if
             # a subscription to a receiver is done by the emitter.
@@ -728,10 +728,10 @@ class ZOCP(Pyre):
     def _handle_UNSUB(self, data, peer, name, grp):
         [emit_peer, emitter, recv_peer, receiver] = data
 
-        id = self.get_uuid()
+        node_id = self.get_uuid()
         recv_peer = uuid.UUID(recv_peer)
         emit_peer = uuid.UUID(emit_peer)
-        if emit_peer != id and recv_peer != id:
+        if emit_peer != node_id and recv_peer != node_id:
             # unsubscription requests are always initially send to the
             # emitter peer. Recv_peer can only be matched to our id if
             # a subscription to a receiver is done by the emitter.
