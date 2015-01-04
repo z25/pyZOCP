@@ -149,46 +149,50 @@ class BpyZOCP(ZOCP):
 
     def _register_lamp(self, obj):
         self.set_object(obj.name, "BPY_Lamp")
-        self.register_vec3f("location",           obj.location[:])
-        #self.register_mat3f("worldOrientation",   obj.worldOrientation[:])
-        self.register_vec3f("orientation",        obj.rotation_euler[:])
-        self.register_vec3f("scale",              obj.scale[:])
-        self.register_vec3f("color",              obj.data.color[:])
-        self.register_float("energy",             obj.data.energy)
-        self.register_float("distance",           obj.data.distance)
+        self.register_vec3f("location",           obj.location[:],         're')
+        #self.register_mat3f("worldOrientation",   obj.worldOrientation[:], 're')
+        self.register_vec3f("orientation",        obj.rotation_euler[:],   're')
+        self.register_vec3f("scale",              obj.scale[:],            're')
+        self.register_vec3f("color",              obj.data.color[:],       're')
+        self.register_float("energy",             obj.data.energy,         're')
+        self.register_float("distance",           obj.data.distance,       're')
         #self.register_int  ("state",              obj.state)
         #self.register_float("mass",               obj.mass)
 
     def _register_camera(self, obj):
         self.set_object(obj.name, "BPY_Camera")
-        self.register_vec3f("location",           obj.location[:])
-        #self.register_mat3f("worldOrientation",   obj.worldOrientation[:])
-        self.register_vec3f("orientation",        obj.rotation_euler[:])
-        self.register_float("angle",              obj.data.angle, 'r')
-        self.register_float("shift_x",            obj.data.shift_x, 'r')
-        self.register_float("shift_y",            obj.data.shift_y, 'r')
+        self.register_vec3f("location",           obj.location[:],          're')
+        #self.register_mat3f("worldOrientation",   obj.worldOrientation[:], 're')
+        self.register_vec3f("orientation",        obj.rotation_euler[:],    're')
+        self.register_float("angle",              obj.data.angle,           're')
+        self.register_float("shift_x",            obj.data.shift_x,         're')
+        self.register_float("shift_y",            obj.data.shift_y,         're')
 
     def _register_mesh(self, obj):
         self.set_object(obj.name, "BPY_Mesh")
-        self.register_vec3f("location",           obj.location[:])
-        #self.register_mat3f("worldOrientation",   obj.worldOrientation[:])
-        self.register_vec3f("orientation",        obj.rotation_euler[:])
-        self.register_vec3f("scale",              obj.scale[:])
-        self.register_vec4f("color",              obj.color[:])
-        #self.register_int  ("state",              obj.state)
-        #self.register_float("mass",               obj.mass)
+        self.register_vec3f("location",           obj.location[:],          're')
+        #self.register_mat3f("worldOrientation",   obj.worldOrientation[:], 're')
+        self.register_vec3f("orientation",        obj.rotation_euler[:],    're')
+        self.register_vec3f("scale",              obj.scale[:],             're')
+        self.register_vec4f("color",              obj.color[:],             're')
+        #self.register_int  ("state",              obj.state,               're')
+        #self.register_float("mass",               obj.mass,                're')
 
     def send_object_changes(self, obj):
         self.set_object(obj.name, "BPY_Mesh")
         if self._cur_obj.get("location", {}).get("value") != obj.location[:]:
-            self.register_vec3f("location", obj.location[:])
+            #self.register_vec3f("location", obj.location[:])
+            self.emit_signal("location", obj.location[:])
         if self._cur_obj.get("orientation", {}).get("value") != obj.rotation_euler[:]:
-            self.register_vec3f("orientation", obj.rotation_euler[:])
+            #self.register_vec3f("orientation", obj.rotation_euler[:])
+            self.emit_signal("orientation", obj.rotation_euler[:])
         if self._cur_obj.get("scale", {}).get("value") != obj.scale[:]:
-            self.register_vec3f("scale", obj.scale[:])
+            #self.register_vec3f("scale", obj.scale[:])
+            self.emit_signal("scale", obj.scale[:])
         if obj.type == "LAMP":
             if self._cur_obj.get("color", {}).get("value") != obj.data.color[:]:
-                self.register_vec3f("color", obj.data.color[:])
+                #self.register_vec3f("color", obj.data.color[:])
+                self.emit_signal("color", obj.data.color[:])
             if self._cur_obj.get("energy", {}).get("value") != obj.data.energy[:]:
                 self.register_float("energy", obj.data.energy[:])
             if self._cur_obj.get("distance", {}).get("value") != obj.data.distance[:]:
@@ -199,6 +203,8 @@ class BpyZOCP(ZOCP):
         elif obj.type == "CAMERA":
             self._register_camera(obj)
 
+    def emit_signal(self, name, data):
+        super().emit_signal(".".join(self._cur_obj_keys + (name, )), data)
 
     #########################################
     # Event methods. These can be overwritten
