@@ -172,19 +172,15 @@ class ZOCP(Pyre):
         self._cur_obj = self.capability['objects'][name]
         self._cur_obj_keys = ('objects', name)
 
-    def _register_param(self, name, type_hint, update=False, access='r', min=None, max=None, step=None):
-        newdata = {'value': int, 'typeHint': typehint, 'access':access }
+    def _register_param(self, name, value, type_hint, access='r', min=None, max=None, step=None):
+        self._cur_obj[name] = {'value': value, 'typeHint': type_hint, 'access':access, 'subscribers': [] }
         if min:
             self._cur_obj[name]['min'] = min
         if max:
             self._cur_obj[name]['max'] = max
         if step:
             self._cur_obj[name]['step'] = step
-        if update and self._cur_obj.get(name):
-            merge_dict(self._cur_obj[name], newdata)
-        else:
-            self._cur_obj[name] = newdata
-        self._on_modified(data={name: newdata})
+        self._on_modified(data={name: self._cur_obj[name]})
 
     def register_int(self, name, int, access='r', min=None, max=None, step=None):
         """
@@ -199,14 +195,7 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': int, 'typeHint': 'int', 'access':access, 'subscribers': [] }
-        if min:
-            self._cur_obj[name]['min'] = min
-        if max:
-            self._cur_obj[name]['max'] = max
-        if step:
-            self._cur_obj[name]['step'] = step
-        self._on_modified(data={name: self._cur_obj[name]})
+        self._register_param(name, int, 'int', access, min, max, step)
 
     def register_float(self, name, flt, access='r', min=None, max=None, step=None):
         """
@@ -221,14 +210,7 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': flt, 'typeHint': 'float', 'access':access, 'subscribers': [] }
-        if min:
-            self._cur_obj[name]['min'] = min
-        if max:
-            self._cur_obj[name]['max'] = max
-        if step:
-            self._cur_obj[name]['step'] = step
-        self._on_modified(data={name: self._cur_obj[name]})
+        self._register_param(name, flt, 'flt', access, min, max, step)
 
     def register_percent(self, name, pct, access='r', min=None, max=None, step=None):
         """
@@ -243,14 +225,7 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': pct, 'typeHint': 'percent', 'access':access, 'subscribers': [] }
-        if min:
-            self._cur_obj[name]['min'] = min
-        if max:
-            self._cur_obj[name]['max'] = max
-        if step:
-            self._cur_obj[name]['step'] = step
-        self._on_modified(data={name: self._cur_obj[name]})
+        self._register_param(name, pct, 'percent', access, min, max, step)
 
     def register_bool(self, name, bl, access='r'):
         """
@@ -262,8 +237,7 @@ class ZOCP(Pyre):
         * access: 'r' and/or 'w' as to if it's readable and writeable state
                   'e' if the value can be emitted and/or 's' if it can be received
         """
-        self._cur_obj[name] = {'value': bl, 'typeHint': 'bool', 'access':access, 'subscribers': [] }
-        self._on_modified(data={name: self._cur_obj[name]})
+        self._register_param(name, bl, 'bool', access)
 
     def register_string(self, name, s, access='r'):
         """
@@ -275,8 +249,7 @@ class ZOCP(Pyre):
         * access: 'r' and/or 'w' as to if it's readable and writeable state
                   'e' if the value can be emitted and/or 's' if it can be received
         """
-        self._cur_obj[name] = {'value': s, 'typeHint': 'string', 'access':access, 'subscribers': [] }
-        self._on_modified(data={name: self._cur_obj[name]})
+        self._register_param(name, s, 'string', access)
 
     def register_vec2f(self, name, vec2f, access='r', min=None, max=None, step=None):
         """
@@ -291,14 +264,7 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': vec2f, 'typeHint': 'vec2f', 'access':access, 'subscribers': [] }
-        if min:
-            self._cur_obj[name]['min'] = min
-        if max:
-            self._cur_obj[name]['max'] = max
-        if step:
-            self._cur_obj[name]['step'] = step
-        self._on_modified(data={name: self._cur_obj[name]})
+        self._register_param(name, vec2f, 'vec2f', access, min, max, step)
 
     def register_vec3f(self, name, vec3f, access='r', min=None, max=None, step=None):
         """
@@ -313,14 +279,7 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': vec3f, 'typeHint': 'vec3f', 'access':access, 'subscribers': [] }
-        if min:
-            self._cur_obj[name]['min'] = min
-        if max:
-            self._cur_obj[name]['max'] = max
-        if step:
-            self._cur_obj[name]['step'] = step
-        self._on_modified(data={name: self._cur_obj[name]})
+        self._register_param(name, vec3f, 'vec3f', access, min, max, step)
 
     def register_vec4f(self, name, vec4f, access='r', min=None, max=None, step=None):
         """
@@ -335,14 +294,7 @@ class ZOCP(Pyre):
         * max: maximal value
         * step: step value used by increments and decrements
         """
-        self._cur_obj[name] = {'value': vec4f, 'typeHint': 'vec4f', 'access':access, 'subscribers': [] }
-        if min:
-            self._cur_obj[name]['min'] = min
-        if max:
-            self._cur_obj[name]['max'] = max
-        if step:
-            self._cur_obj[name]['step'] = step
-        self._on_modified(data={name: self._cur_obj[name]})
+        self._register_param(name, vec4f, 'vec4f', access, min, max, step)
 
     #########################################
     # Node methods to peers
