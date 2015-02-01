@@ -60,3 +60,25 @@ pip install pyzmq
 pip install https://github.com/zeromq/pyre/archive/master.zip
 pip install https://github.com/z25/pyZOCP/archive/master.zip
 </pre>
+
+h2. Frequently asked questions
+
+h3. What is the security model of ZOCP
+
+There is none. As we are mostly focused on performance and security is always a performance killer. Of course encryption can be implemented on a message level or transport level very easily. However designing with all security in mind makes a protocol like ZOCP absurdly complicated.
+
+h3. Can I declare capabilities or register parameters at runtime?
+
+Yes you can. Another node can even do that!
+
+h3. Do I need a server
+
+No, ZOCP uses the ZRE protocol which discovers and interconnects nodes without any outside help.
+
+h3. How can I use this on the internet
+
+Discovery on WAN networks is still a topic of research. You can traverse layer 3 networks by using multicast. This implies the network supports multicast. There is also gossip support in ZRE but we don't use that yet in ZOCP.
+
+h3. Is there a version of ZOCP in C?
+
+You should understand that ZOCP is a protocol. A protocol is just a defined set of agreements. We have a reference prototype written in Python because prototyping in Python is *great*. Prototyping in C is not. So once we deem the protocol stable enough we will write a C implementation. This is also very easy from Python. So "No" there is not yet a C implementation of ZOCP but there will be as soon as we can. The ZRE protocol "does have a C version":http://github.com/zeromq/zyre already called Zyre!
