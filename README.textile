@@ -82,3 +82,7 @@ Discovery on WAN networks is still a topic of research. You can traverse layer 3
 h3. Is there a version of ZOCP in C?
 
 You should understand that ZOCP is a protocol. A protocol is just a defined set of agreements. We have a reference prototype written in Python because prototyping in Python is *great*. Prototyping in C is not. So once we deem the protocol stable enough we will write a C implementation. This is also very easy from Python. So "No" there is not yet a C implementation of ZOCP but there will be as soon as we can. The ZRE protocol "does have a C version":http://github.com/zeromq/zyre already called Zyre!
+
+h3. Is there any documentation?
+
+We are working on it. The protocol is still very much in beta. One of our goals is to make ZOCP as easy as possible mentally. Asynchronous computing is already very challenging for the brain. Therefore changes to the protocol will probably have a big impact on the documentation. We don't want to confuse you already.
