@@ -10,14 +10,14 @@ class SubscriberNode(ZOCP):
         self.nodename = nodename
         self.string_value = ''
         self.count_value = 0
-        super().__init__()
+        ZOCP.__init__(self)
 
     def run(self):
         self.set_name(self.nodename)
         self.register_string("My String", self.string_value, 'rws')
         self.register_int("Linked counter", self.count_value, 'rs')
         self.start()
-        super().run()
+        ZOCP.run(self)
         
     def on_peer_enter(self, peer, name, *args, **kwargs):
         split_name = name.split("@",1)

@@ -13,7 +13,7 @@ class SubscribableNode(ZOCP):
         self.count_value = 0
         self.counter_active = False
         self.string_value = ''
-        super().__init__()
+        ZOCP.__init__(self)
 
 
     def run(self):
@@ -25,12 +25,12 @@ class SubscribableNode(ZOCP):
         self.start()
 
         self.stop_timer = self.call_repeatedly(1, self.on_timer)
-        super().run()
+        ZOCP.run(self)
 
     
     def stop(self):
         self.stop_timer()
-        super().stop()
+        ZOCP.stop(self)
 
 
     def on_modified(self, peer, name, data, *args, **kwargs):

@@ -79,7 +79,7 @@ def dict_merge(a, b, path=None):
 class ZOCP(Pyre):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(ZOCP, self).__init__(*args, **kwargs)
         self.subscriptions = {}
         self.subscribers = {}
         self.set_header("X-ZOCP", "1")
