@@ -11,13 +11,13 @@ class SubscriptionMakerNode(ZOCP):
         self.subscribe = False
         self.subscriber_peer = None
         self.subscribee_peer = None
-        super().__init__()
+        super(SubscriptionMakerNode, self).__init__()
 
     def run(self):
         self.set_name(self.nodename)
         self.register_bool("Subscribe 'My String'", self.subscribe, 'rw')
         self.start()
-        super().run()
+        super(SubscriptionMakerNode, self).run()
         
     def on_peer_enter(self, peer, name, *args, **kwargs):
         split_name = name.split("@",1)

@@ -44,7 +44,7 @@ def mergedicts(a, b, path=None):
 class ZmqEventLoop(urwid.SelectEventLoop):
 
     def __init__(self, ctx=zmq.Context(), *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(ZmqEventLoop, self).__init__(*args, **kwargs)
         self._zctx = ctx
         self._zpoller = zmq.Poller()
 
@@ -147,7 +147,7 @@ class PopUpDialog(urwid.WidgetWrap):
 
 class HeadingWithPopUp(urwid.PopUpLauncher):
     def __init__(self, name):
-        super().__init__(urwid.Button(name))
+        super(HeadingWithPopUp, self).__init__(urwid.Button(name))
         urwid.connect_signal(self.original_widget, 'click',
             lambda button: self.open_pop_up())
 
@@ -164,7 +164,7 @@ class UrwStdWriter(io.TextIOWrapper):
     
     def __init__(self, *args, **kwargs):
         self.wgt = urwid.Text("")
-        super().__init__(*args, **kwargs)
+        super(UrwStdWriter, self).__init__(*args, **kwargs)
 
     def write(self, data):
         self.wgt.set_text("%s%s" %(self.wgt.get_text()[0], data))
@@ -181,7 +181,7 @@ class ZOCPProgressBar(urwid.ProgressBar):
     def __init__(self, sel_normal, sel_complete, *args, **kwargs):
         self.sel_normal = sel_normal
         self.sel_complete = sel_complete
-        super().__init__(*args, **kwargs)
+        super(ZOCPProgressBar, self).__init__(*args, **kwargs)
 
     def set_label(self, label):
         self._label, self._attrib = decompose_tagmarkup(caption)
@@ -221,7 +221,7 @@ class ZOCPKeyboardWidget(urwid.Edit):
         pressing enter or when leaving widget
         """
         (maxcol,) = size
-        unhandled = super().keypress((maxcol,),key)
+        unhandled = super(ZOCPKeyboardWidget, self).keypress((maxcol,),key)
 
         if key == 'enter':
             self.set_val = self.value()
@@ -344,7 +344,7 @@ class ZOCPIntWidget(ZOCPKeyboardWidget):
         2
         """
         (maxcol,) = size
-        unhandled = super().keypress((maxcol,),key)
+        unhandled = super(ZOCPIntWidget, self).keypress((maxcol,),key)
 
         if not unhandled:
         # trim leading zeros
@@ -408,7 +408,7 @@ class ZOCPFloatWidget(ZOCPKeyboardWidget):
         self.min = min
         self.max = max
         self.step = step
-        super().__init__(caption, "%f" %value)
+        super(ZOCPFloatWidget).__init__(caption, "%f" %value)
         #rwid.connect_signal(self, 'change', self.on_change)
 
     def keypress(self, size, key):
@@ -439,7 +439,7 @@ class ZOCPFloatWidget(ZOCPKeyboardWidget):
             self.set_val = val
             self._emit("change", val)
         else:
-            unhandled = super().keypress((maxcol,),key)
+            unhandled = super(ZOCPFloatWidget, self).keypress((maxcol,),key)
 
             if not unhandled:
             # trim leading zeros
@@ -503,7 +503,7 @@ class ZOCPVec2fWidget(ZOCPKeyboardWidget):
         self.min = min
         self.max = max
         self.step = step
-        super().__init__(caption, "[%.3f, %.3f]" %(value[0], value[1]))
+        super(ZOCPVec2fWidget, self).__init__(caption, "[%.3f, %.3f]" %(value[0], value[1]))
 
     def keypress(self, size, key):
         """
@@ -532,7 +532,7 @@ class ZOCPVec2fWidget(ZOCPKeyboardWidget):
             self.set_value(val)
             self._emit("change", val)
         else:
-            unhandled = super().keypress((maxcol,),key)
+            unhandled = super(ZOCPVec2fWidget, self).keypress((maxcol,),key)
 
             if not unhandled:
             # trim leading zeros
@@ -583,7 +583,7 @@ class ZOCPNodeWidget(urwid.WidgetWrap):
         self.focused = False
         self._update_widgets()
         display_widget = urwid.Pile(urwid.SimpleFocusListWalker(self._widgets))
-        super().__init__(display_widget)
+        super(ZOCPNodeWidget, self).__init__(display_widget)
 
     def update(self, data=None):
         if isinstance(data, dict):
@@ -698,7 +698,7 @@ focus_map_pg = {
 class urwZOCP(zocp.ZOCP):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(urwZOCP, self).__init__(*args, **kwargs)
         self.oldout = sys.stdout
         self.out = UrwStdWriter(io.BytesIO(), sys.stdout.encoding)
         self.znodes = {}
