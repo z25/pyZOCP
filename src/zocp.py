@@ -502,9 +502,11 @@ class ZOCP(Pyre):
 
         peer: id of peer whose data has been changed
         name: name of peer whose data has been changed
-        data: changed data, formatted as [emitter, value]
+        data: changed data, formatted as [emitter, value, [sensors1, ...]]
               emitter: name of the emitter on the subscribee
               value: value of the emitter
+              [sensor1,...]: list of names of sensors on the subscriber
+                             receiving the signal
         """
         logger.debug("ZOCP PEER SIGNALED: %s modified %s" %(name, data))
 
@@ -731,9 +733,15 @@ class ZOCP(Pyre):
         if peer in self.subscriptions:
             subscription = self.subscriptions[peer]
             if emitter in subscription:
-                # propagate the signal if it changes the value of this node
                 receivers = subscription[emitter]
                 for receiver in receivers:
+                    # add a list of sensors on this node receiving the signal
+                    if len(data) == 2:
+                        data.append([receiver])
+                    else:
+                        data[2].append(receiver)
+
+                    # propagate the signal if it changes the value of this node
                     if receiver is not None and self.capability[receiver]['value'] != value:
                         self.emit_signal(receiver, value)
 
