@@ -559,7 +559,8 @@ class ZOCP(Pyre):
             if peer in self.subscriptions:
                 self.subscriptions.pop(peer)
             self.on_peer_exit(peer, name, msg)
-            self.peers_capabilities.pop(peer)
+            if peer in self.peers_capabilities:
+                self.peers_capabilities.pop(peer)
             return
 
         if type == "JOIN":
