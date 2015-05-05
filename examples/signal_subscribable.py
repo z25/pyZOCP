@@ -36,8 +36,6 @@ class SubscribableNode(ZOCP):
             except (KeyboardInterrupt, SystemExit):
                 break
 
-        z.stop()
-
 
     def on_modified(self, peer, name, data, *args, **kwargs):
         if self._running and peer:
@@ -87,5 +85,6 @@ if __name__ == '__main__':
 
     z = SubscribableNode("subscribable@%s" % socket.gethostname())
     z.run()
+    z.stop()
     z = None
     print("FINISH")
