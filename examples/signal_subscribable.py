@@ -23,7 +23,7 @@ class SubscribableNode(ZOCP):
         self.register_float("My Float", self.float_value, 'rwe')
         self.register_bool("Counter active", self.counter_active, 'rw')
         self.register_float("Counter", self.count_value, 're')
-        self.register_float("Interval", self.count_value, 'rw', .01, 10, 0.1)
+        self.register_float("Interval", self.interval, 'rw', .01, 10, 0.1)
         self.register_string("My String", self.string_value, 'rwe')
         self.start()
 
@@ -60,7 +60,7 @@ class SubscribableNode(ZOCP):
         if key == "My String":
             if new_value != self.string_value:
                 self.string_value = new_value
-        if key == "My Float":
+        if key == "Interval":
             if new_value != self.interval:
                 self.interval = new_value
                 new_loop = time.time() + self.interval
