@@ -30,8 +30,8 @@ class SubscribableNode(ZOCP):
         while True:
             try:
                 self.run_once(0)
-                if self.counter_active and time.time() > self.loop_time:
-                    self.loop_time = time.time() + self.interval
+                if self.counter_active and time.clock() > self.loop_time:
+                    self.loop_time = time.clock() + self.interval
                     self.on_timer()
             except (KeyboardInterrupt, SystemExit):
                 break
@@ -65,14 +65,14 @@ class SubscribableNode(ZOCP):
         if key == "My Float":
             if new_value != self.interval:
                 self.interval = new_value
-                new_loop = time.time() + self.interval
+                new_loop = time.clock() + self.interval
                 if new_loop < self.loop_time:
                     self.loop_time = new_loop
         if key == "Counter active":
             if new_value != self.counter_active:
                 self.counter_active = new_value
                 if new_value:
-                    self.loop_time = time.time() + self.interval
+                    self.loop_time = time.clock() + self.interval
 
 
     def on_timer(self):
