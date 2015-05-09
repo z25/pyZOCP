@@ -21,7 +21,7 @@ class SubscriptionMakerNode(ZOCP):
         
     def on_peer_enter(self, peer, name, *args, **kwargs):
         split_name = name.split("@",1)
-        if split_name[0] == 'subscribee':
+        if split_name[0] == 'subscribable':
             self.subscribee_peer = peer
             self.update_subscription()
 

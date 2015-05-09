@@ -21,7 +21,7 @@ class SubscriberNode(ZOCP):
         
     def on_peer_enter(self, peer, name, *args, **kwargs):
         split_name = name.split("@",1)
-        if(split_name[0] == 'subscribee'):
+        if(split_name[0] == 'subscribable'):
             #self.signal_subscribe(self.get_uuid(), 'My String', peer, 'My String')
             self.signal_subscribe(self.get_uuid(), 'Linked counter', peer, 'Counter')
     
