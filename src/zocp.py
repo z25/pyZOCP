@@ -735,13 +735,11 @@ class ZOCP(Pyre):
             subscription = self.subscriptions[peer]
             if emitter in subscription:
                 receivers = subscription[emitter]
-                for receiver in receivers:
-                    # add a list of sensors on this node receiving the signal
-                    if len(data) == 2:
-                        data.append([receiver])
-                    else:
-                        data[2].append(receiver)
 
+                # add a list of sensors on this node receiving the signal
+                data.append(receivers)
+
+                for receiver in receivers:
                     # propagate the signal if it changes the value of this node
                     if receiver is not None and self.capability[receiver]['value'] != value:
                         self.emit_signal(receiver, value)
