@@ -7,19 +7,17 @@ import time
 
 class SubscribableNode(ZOCP):
     # Constructor
-    def __init__(self, nodename=""):
-        self.nodename = nodename
+    def __init__(self, nodename):
+        super(SubscribableNode, self).__init__(nodename)
         self.float_value = 1.0
         self.count_value = 0
         self.counter_active = False
         self.string_value = ''
         self.interval = 1.0
         self.loop_time = 0
-        super(SubscribableNode, self).__init__()
 
 
     def run(self):
-        self.set_name(self.nodename)
         self.register_float("My Float", self.float_value, 'rwe')
         self.register_bool("Counter active", self.counter_active, 'rw')
         self.register_float("Counter", self.count_value, 're')

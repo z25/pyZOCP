@@ -6,15 +6,13 @@ import logging
 
 class SubscriptionMakerNode(ZOCP):
     # Constructor
-    def __init__(self, nodename=""):
-        self.nodename = nodename
+    def __init__(self, nodename):
+        super(SubscriptionMakerNode, self).__init__(nodename)
         self.subscribe = False
         self.subscriber_peer = None
         self.subscribee_peer = None
-        super(SubscriptionMakerNode, self).__init__()
 
     def run(self):
-        self.set_name(self.nodename)
         self.register_bool("Subscribe 'My String'", self.subscribe, 'rw')
         self.start()
         super(SubscriptionMakerNode, self).run()
