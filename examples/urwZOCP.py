@@ -734,7 +734,7 @@ class urwZOCP(zocp.ZOCP):
             #cells.contents.insert(index, (nd, ('given', 20)))
             self.cells.contents.append(self.znodes[peer])
             
-        self.signal_subscribe(self.get_uuid(), None, peer, None)
+        self.signal_subscribe(self.uuid(), None, peer, None)
 
     def on_peer_exit(self, peer, name, *args, **kwargs):
         print("ZOCP EXIT    : %s" %(name))
@@ -772,5 +772,5 @@ class urwZOCP(zocp.ZOCP):
 
 if __name__ == "__main__":
     ctx = zmq.Context()
-    z = urwZOCP(ctx=ctx)
+    z = urwZOCP("urwMonitor", ctx=ctx)
     z.run()

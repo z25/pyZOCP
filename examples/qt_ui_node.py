@@ -27,8 +27,7 @@ class QTZOCPNode(QWidget):
         self.show()
 
     def init_zocp(self):
-        self.z = ZOCP()
-        self.z.set_node_name("QT UI TEST")
+        self.z = ZOCP("QT UI TEST")
         self.z.register_float("myFloat", 2.3, 'rw', 0, 5.0, 0.1)
         self.notifier = QSocketNotifier(
                 self.z.inbox.getsockopt(zmq.FD), 

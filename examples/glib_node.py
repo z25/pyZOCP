@@ -7,8 +7,7 @@ import zmq
 GObject.threads_init()
 loop = GObject.MainLoop()
 
-z = ZOCP()
-z.set_node_name("GLibTest")
+z = ZOCP("GLibTest")
 z.register_percent('myPercent', 12, access='rw')
 
 def zocp_handle(*args, **kwargs):
