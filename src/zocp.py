@@ -553,7 +553,7 @@ class ZOCP(Pyre):
             self.on_peer_enter(peer, name, msg)
             return
 
-        if type == "EXIT":
+        elif type == "EXIT":
             if peer in self.subscribers:
                 self.subscribers.pop(peer)
             if peer in self.subscriptions:
@@ -563,12 +563,12 @@ class ZOCP(Pyre):
                 self.peers_capabilities.pop(peer)
             return
 
-        if type == "JOIN":
+        elif type == "JOIN":
             grp = msg.pop(0)
             self.on_peer_join(peer, name, grp, msg)
             return
 
-        if type == "LEAVE":
+        elif type == "LEAVE":
             #if peer in self.subscribers:
             #    self.subscribers.pop(peer)
             #if peer in self.subscriptions:
@@ -577,7 +577,7 @@ class ZOCP(Pyre):
             self.on_peer_leave(peer, name, grp, msg)
             return
 
-        if type == "SHOUT":
+        elif type == "SHOUT":
             grp = msg.pop(0)
             self.on_peer_shout(peer, name, grp, msg)
 
