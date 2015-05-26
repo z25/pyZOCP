@@ -122,8 +122,8 @@ class ZOCP(Pyre):
         Return node's name
         """
         # Is handled by Pyre
-        logger.warning("DEPRECATED: get_node_name is deprecated, use get_name")
-        return self.get_name()
+        logger.warning("DEPRECATED: get_node_name is deprecated, use name")
+        return self.name()
 
     def set_node_location(self, location=[0,0,0]):
         """
@@ -348,7 +348,7 @@ class ZOCP(Pyre):
         is then sent to the emitter node which in turn forwards the
         subscribtion request to the receiver node.
         """
-        if recv_peer == self.get_uuid():
+        if recv_peer == self.uuid():
             # we are the receiver so register the emitter
             peer_subscriptions = {}
             if emit_peer in self.subscriptions:
@@ -385,7 +385,7 @@ class ZOCP(Pyre):
         is then sent to the emitter node which in turn forwards the
         subscribtion request to the receiver node.
         """
-        if recv_peer == self.get_uuid():
+        if recv_peer == self.uuid():
             # we are the receiver so unregister the emitter
             if (emit_peer in self.subscriptions and
                     emitter in self.subscriptions[emit_peer] and
@@ -540,7 +540,7 @@ class ZOCP(Pyre):
         grp=None
         if type == "ENTER":
             # This is giving conflicts when using a poller, in discussion
-            #if not self.get_peer_header_value(peer, "X-ZOCP"):
+            #if not self.peer_header_value(peer, "X-ZOCP"):
             #    logger.debug("Node is not a ZOCP node")
             #    return
 
@@ -641,7 +641,7 @@ class ZOCP(Pyre):
     def _handle_SUB(self, data, peer, name, grp):
         [emit_peer, emitter, recv_peer, receiver] = data
 
-        node_id = self.get_uuid()
+        node_id = self.uuid()
         recv_peer = uuid.UUID(recv_peer)
         emit_peer = uuid.UUID(emit_peer)
         if emit_peer != node_id and recv_peer != node_id:
@@ -680,7 +680,7 @@ class ZOCP(Pyre):
     def _handle_UNSUB(self, data, peer, name, grp):
         [emit_peer, emitter, recv_peer, receiver] = data
 
-        node_id = self.get_uuid()
+        node_id = self.uuid()
         recv_peer = uuid.UUID(recv_peer)
         emit_peer = uuid.UUID(emit_peer)
         if emit_peer != node_id and recv_peer != node_id:
