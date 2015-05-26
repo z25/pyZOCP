@@ -6,14 +6,12 @@ import logging
 
 class SubscriberNode(ZOCP):
     # Constructor
-    def __init__(self, nodename=""):
-        self.nodename = nodename
+    def __init__(self, nodename):
+        super(SubscriberNode, self).__init__(nodename)
         self.string_value = ''
         self.count_value = 0
-        super(SubscriberNode, self).__init__()
 
     def run(self):
-        self.set_name(self.nodename)
         self.register_string("My String", self.string_value, 'rws')
         self.register_int("Linked counter", self.count_value, 'rs')
         self.start()

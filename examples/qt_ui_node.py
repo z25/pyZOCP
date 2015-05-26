@@ -51,6 +51,7 @@ class QTZOCPNode(QWidget):
     def closeEvent(self, *args):
         print(args)
         self.z.stop()
+        del self.z
 
 
 def main():
