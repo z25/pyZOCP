@@ -502,9 +502,11 @@ class ZOCP(Pyre):
 
         peer: id of peer whose data has been changed
         name: name of peer whose data has been changed
-        data: changed data, formatted as [emitter, value]
+        data: changed data, formatted as [emitter, value, [sensors1, ...]]
               emitter: name of the emitter on the subscribee
               value: value of the emitter
+              [sensor1,...]: list of names of sensors on the subscriber
+                             receiving the signal
         """
         logger.debug("ZOCP PEER SIGNALED: %s modified %s" %(name, data))
 
@@ -551,21 +553,22 @@ class ZOCP(Pyre):
             self.on_peer_enter(peer, name, msg)
             return
 
-        if type == "EXIT":
+        elif type == "EXIT":
             if peer in self.subscribers:
                 self.subscribers.pop(peer)
             if peer in self.subscriptions:
                 self.subscriptions.pop(peer)
             self.on_peer_exit(peer, name, msg)
-            self.peers_capabilities.pop(peer)
+            if peer in self.peers_capabilities:
+                self.peers_capabilities.pop(peer)
             return
 
-        if type == "JOIN":
+        elif type == "JOIN":
             grp = msg.pop(0)
             self.on_peer_join(peer, name, grp, msg)
             return
 
-        if type == "LEAVE":
+        elif type == "LEAVE":
             #if peer in self.subscribers:
             #    self.subscribers.pop(peer)
             #if peer in self.subscriptions:
@@ -574,7 +577,7 @@ class ZOCP(Pyre):
             self.on_peer_leave(peer, name, grp, msg)
             return
 
-        if type == "SHOUT":
+        elif type == "SHOUT":
             grp = msg.pop(0)
             self.on_peer_shout(peer, name, grp, msg)
 
@@ -731,9 +734,13 @@ class ZOCP(Pyre):
         if peer in self.subscriptions:
             subscription = self.subscriptions[peer]
             if emitter in subscription:
-                # propagate the signal if it changes the value of this node
                 receivers = subscription[emitter]
+
+                # add a list of sensors on this node receiving the signal
+                data.append(receivers)
+
                 for receiver in receivers:
+                    # propagate the signal if it changes the value of this node
                     if receiver is not None and self.capability[receiver]['value'] != value:
                         self.emit_signal(receiver, value)
 

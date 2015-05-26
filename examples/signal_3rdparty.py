@@ -21,7 +21,7 @@ class SubscriptionMakerNode(ZOCP):
         
     def on_peer_enter(self, peer, name, *args, **kwargs):
         split_name = name.split("@",1)
-        if split_name[0] == 'subscribee':
+        if split_name[0] == 'subscribable':
             self.subscribee_peer = peer
             self.update_subscription()
 
@@ -37,7 +37,9 @@ class SubscriptionMakerNode(ZOCP):
 
     def on_peer_signaled(self, peer, name, data, *args, **kwargs):
         if self._running and peer:
-            self.receive_value(data[0])
+            for sensor in data[2]:
+                if(sensor):
+                    self.receive_value(sensor)
 
     def receive_value(self, key):
         new_value = self.capability[key]['value']

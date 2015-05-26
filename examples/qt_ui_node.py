@@ -6,15 +6,21 @@ PyQt5 ZOCP UI Node example
 """
 
 import sys
-from PyQt5 import QtCore, QtWidgets, QtGui
+try:
+    from PyQt5.QtCore import QSocketNotifier
+    from PyQt5.QtWidgets import QWidget, QTextEdit, QApplication
+except ImportError:
+    from PySide.QtCore import QSocketNotifier
+    from PySide.QtGui import QWidget, QTextEdit, QApplication
+
 from zocp import ZOCP
 import zmq
 
-class QTZOCPNode(QtWidgets.QWidget):
+class QTZOCPNode(QWidget):
 
     def __init__(self):
         super(QTZOCPNode, self).__init__()
-        self.qle = QtWidgets.QTextEdit(self)
+        self.qle = QTextEdit(self)
         self.qle.move(1, 1)
         self.qle.resize(640,480)
         self.init_zocp()
@@ -23,9 +29,9 @@ class QTZOCPNode(QtWidgets.QWidget):
     def init_zocp(self):
         self.z = ZOCP("QT UI TEST")
         self.z.register_float("myFloat", 2.3, 'rw', 0, 5.0, 0.1)
-        self.notifier = QtCore.QSocketNotifier(
+        self.notifier = QSocketNotifier(
                 self.z.inbox.getsockopt(zmq.FD), 
-                QtCore.QSocketNotifier.Read
+                QSocketNotifier.Read
                 )
         self.notifier.setEnabled(True)
         self.notifier.activated.connect(self.zocp_event)
@@ -48,7 +54,7 @@ class QTZOCPNode(QtWidgets.QWidget):
 
 
 def main():
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     window = QTZOCPNode() 
     app.exec_()
 
