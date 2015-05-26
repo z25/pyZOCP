@@ -108,7 +108,6 @@ class BpyZOCP(ZOCP):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.set_name("Blender@" + socket.gethostname() + ":" + bpy.app.version_string)
         self.start()
 
     @persistent
@@ -296,7 +295,7 @@ class BpyZOCP(ZOCP):
     #except (KeyboardInterrupt, SystemExit):
     #        self.stop()
 
-z = BpyZOCP()
+z = BpyZOCP("Blender@" + socket.gethostname() + ":" + bpy.app.version_string)
 
 compobj = {}
 for ob in bpy.data.objects:

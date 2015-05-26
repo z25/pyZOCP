@@ -814,8 +814,7 @@ class ZOCP(Pyre):
 
 if __name__ == '__main__':
 
-    z = ZOCP()
-    z.set_node_name("ZOCP-Test")
+    z = ZOCP("ZOCP-Test")
     z.register_bool("zocpBool", True, 'rw')
     z.register_float("zocpFloat", 2.3, 'rw', 0, 5.0, 0.1)
     z.register_int('zocpInt', 10, access='rw', min=-10, max=10, step=1)

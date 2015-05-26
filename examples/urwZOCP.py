@@ -772,5 +772,5 @@ class urwZOCP(zocp.ZOCP):
 
 if __name__ == "__main__":
     ctx = zmq.Context()
-    z = urwZOCP(ctx=ctx)
+    z = urwZOCP("urwMonitor", ctx=ctx)
     z.run()
