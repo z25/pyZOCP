@@ -364,6 +364,19 @@ class ZOCP(Pyre):
                 if receiver not in self.peers_capabilities:
                     self.peer_get(recv_peer, {receiver: {}})
 
+        if emit_peer == self.uuid():
+            # we are the emitter so register the receiver
+            # update subscribers in capability tree
+            subscriber = (recv_peer.hex, receiver)
+            subscribers = self.capability[emitter]["subscribers"]
+            if subscriber not in subscribers:
+                subscribers.append(subscriber)
+                self._on_modified(data={emitter: {"subscribers": subscribers}})
+            msg = json.dumps({'SUB': [emit_peer.hex, emitter, recv_peer.hex, receiver]})
+            logger.warning("SELF SUBSCR")
+            self.whisper(recv_peer, msg.encode('utf-8'))
+            return
+
         msg = json.dumps({'SUB': [emit_peer.hex, emitter, recv_peer.hex, receiver]})
         self.whisper(emit_peer, msg.encode('utf-8'))
 
@@ -657,7 +670,7 @@ class ZOCP(Pyre):
         if recv_peer != peer:
             # check if this should be forwarded (third party subscription request)
             logger.debug("ZOCP SUB     : forwarding subscription request: %s" % data)
-            self.signal_subscribe(emit_peer, emitter, recv_peer, receiver)
+            self.signal_subscribe(recv_peer, receiver,emit_peer, emitter)
             return
 
         if emitter is not None:
