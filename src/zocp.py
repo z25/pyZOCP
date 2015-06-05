@@ -367,13 +367,12 @@ class ZOCP(Pyre):
         if emit_peer == self.uuid():
             # we are the emitter so register the receiver
             # update subscribers in capability tree
-            subscriber = (recv_peer.hex, receiver)
-            subscribers = self.capability[emitter]["subscribers"]
-            if subscriber not in subscribers:
-                subscribers.append(subscriber)
-                self._on_modified(data={emitter: {"subscribers": subscribers}})
+            #subscriber = (recv_peer.hex, receiver)
+            #subscribers = self.capability[emitter]["subscribers"]
+            #if subscriber not in subscribers:
+            #    subscribers.append(subscriber)
+            #    self._on_modified(data={emitter: {"subscribers": subscribers}})
             msg = json.dumps({'SUB': [emit_peer.hex, emitter, recv_peer.hex, receiver]})
-            logger.warning("SELF SUBSCR")
             self.whisper(recv_peer, msg.encode('utf-8'))
             return
 
