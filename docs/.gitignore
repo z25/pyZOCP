@@ -1,0 +1,5 @@
+# sphinx dirs
+_build
+_static
+_templates
+
