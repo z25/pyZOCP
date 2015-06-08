@@ -13,12 +13,10 @@ class ZOCPTest(unittest.TestCase):
     
     def setUp(self, *args, **kwargs):
         ctx = zmq.Context()
-        self.node1 = zocp.ZOCP(ctx=ctx)
+        self.node1 = zocp.ZOCP("node1", ctx=ctx)
         self.node1.set_header("X-TEST", "1")
-        self.node1.set_name("node1")
-        self.node2 = zocp.ZOCP(ctx=ctx)
+        self.node2 = zocp.ZOCP("node2", ctx=ctx)
         self.node2.set_header("X-TEST", "1")
-        self.node2.set_name("node2")
         self.node1.start()
         self.node2.start()
         # give time for nodes to exchange
@@ -101,6 +99,30 @@ class ZOCPTest(unittest.TestCase):
         self.assertNotIn("TestRecvFloat", self.node2.subscriptions.get(self.node1.uuid(), {}).get("TestEmitFloat", {}))
         self.assertNotIn("TestRecvFloat", self.node1.subscribers.get(self.node2.uuid(), {}).get("TestEmitFloat", {}))
 
+    def test_self_emitter_subscribe(self):
+        self.node1.register_float("TestEmitFloat", 1.0, 'rwe')
+        self.node2.register_float("TestRecvFloat", 1.0, 'rws')
+        # give time for dispersion
+        self.node1.run_once(5)
+        self.node2.run_once(5)
+        self.node1.run_once(5)
+        self.node2.run_once(5)
+        self.node1.signal_subscribe(self.node2.uuid(), "TestRecvFloat", self.node1.uuid(), "TestEmitFloat")
+        # give time for dispersion
+        self.node2.run_once(5)
+        self.node1.run_once(5)
+        self.node2.run_once(5)
+        self.node1.run_once(5)
+        # subscriptions structure: {Emitter nodeID: {'EmitterID': ['Local ReceiverID']}}
+        self.assertIn("TestRecvFloat", self.node1.subscribers[self.node2.uuid()]["TestEmitFloat"])
+        self.assertIn("TestRecvFloat", self.node2.subscriptions[self.node1.uuid()]["TestEmitFloat"])
+        # unsubscribe
+        self.node1.signal_unsubscribe(self.node2.uuid(), "TestRecvFloat", self.node1.uuid(), "TestEmitFloat")
+        #time.sleep(0.5)
+        self.node2.run_once(5)
+        #self.assertNotIn("TestRecvFloat", self.node2.subscriptions.get(self.node1.uuid(), {}).get("TestEmitFloat", {}))
+        #self.assertNotIn("TestRecvFloat", self.node1.subscribers.get(self.node2.uuid(), {}).get("TestEmitFloat", {}))
+
     def test_emit_signal(self):
         self.node1.register_float("TestEmitFloat", 1.0, 'rwe')
         self.node2.register_float("TestRecvFloat", 1.0, 'rws')
@@ -122,4 +144,10 @@ class ZOCPTest(unittest.TestCase):
 # end ZOCPTest
 
 if __name__ == '__main__':
+    import logging
+    logger = logging.getLogger("zocp")
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(logging.StreamHandler())
+    #logger.propagate = False
+
     unittest.main()
