@@ -120,8 +120,8 @@ class ZOCPTest(unittest.TestCase):
         self.node1.signal_unsubscribe(self.node2.uuid(), "TestRecvFloat", self.node1.uuid(), "TestEmitFloat")
         #time.sleep(0.5)
         self.node2.run_once(5)
-        #self.assertNotIn("TestRecvFloat", self.node2.subscriptions.get(self.node1.uuid(), {}).get("TestEmitFloat", {}))
-        #self.assertNotIn("TestRecvFloat", self.node1.subscribers.get(self.node2.uuid(), {}).get("TestEmitFloat", {}))
+        self.assertNotIn("TestRecvFloat", self.node2.subscriptions.get(self.node1.uuid(), {}).get("TestEmitFloat", {}))
+        self.assertNotIn("TestRecvFloat", self.node1.subscribers.get(self.node2.uuid(), {}).get("TestEmitFloat", {}))
 
     def test_emit_signal(self):
         self.node1.register_float("TestEmitFloat", 1.0, 'rwe')

@@ -367,11 +367,24 @@ class ZOCP(Pyre):
         if emit_peer == self.uuid():
             # we are the emitter so register the receiver
             # update subscribers in capability tree
-            #subscriber = (recv_peer.hex, receiver)
-            #subscribers = self.capability[emitter]["subscribers"]
-            #if subscriber not in subscribers:
-            #    subscribers.append(subscriber)
-            #    self._on_modified(data={emitter: {"subscribers": subscribers}})
+            subscriber = (recv_peer.hex, receiver)
+            subscribers = self.capability[emitter]["subscribers"]
+            if subscriber not in subscribers:
+                subscribers.append(subscriber)
+                self._on_modified(data={emitter: {"subscribers": subscribers}})
+
+            peer_subscribers = {}
+            if recv_peer in self.subscribers:
+                peer_subscribers = self.subscribers[recv_peer]
+            if not emitter in peer_subscribers:
+                peer_subscribers[emitter] = [receiver]
+            elif not receiver in peer_subscribers[emitter]:
+                peer_subscribers[emitter].append(receiver)
+            self.subscribers[recv_peer] = peer_subscribers
+            # we don't need to call the peer subscribed event as we initiated it
+            # and we don't know the name
+            #self.on_peer_subscribed(recv_peer, name, data)
+
             msg = json.dumps({'SUB': [emit_peer.hex, emitter, recv_peer.hex, receiver]})
             self.whisper(recv_peer, msg.encode('utf-8'))
             return
@@ -407,6 +420,30 @@ class ZOCP(Pyre):
                     self.subscriptions[emit_peer].pop(emitter)
                 if not any(self.subscriptions[emit_peer]):
                     self.subscriptions.pop(emit_peer)
+
+        if emit_peer == self.uuid():
+            # we are the emitter so unregister the receiver
+            # update subscribers in capability tree
+            subscriber = (recv_peer.hex, receiver)
+            subscribers = self.capability[emitter]["subscribers"]
+            if subscriber in subscribers:
+                subscribers.remove(subscriber)
+                self._on_modified(data={emitter: {"subscribers": subscribers}})
+
+            if (recv_peer in self.subscribers and
+                emitter in self.subscribers[recv_peer] and
+                receiver in self.subscribers[recv_peer][emitter]):
+                self.subscribers[recv_peer][emitter].remove(receiver)
+            if not any(self.subscribers[recv_peer][emitter]):
+                self.subscribers[recv_peer].pop(emitter)
+            if not any(self.subscribers[recv_peer]):
+                self.subscribers.pop(recv_peer)
+
+            #self.on_peer_unsubscribed(peer, name, data)
+
+            msg = json.dumps({'UNSUB': [emit_peer.hex, emitter, recv_peer.hex, receiver]})
+            self.whisper(recv_peer, msg.encode('utf-8'))
+            return
 
         msg = json.dumps({'UNSUB': [emit_peer.hex, emitter, recv_peer.hex, receiver]})
         self.whisper(emit_peer, msg.encode('utf-8'))
@@ -708,7 +745,7 @@ class ZOCP(Pyre):
         if recv_peer != peer:
             # check if this should be forwarded (third party unsubscription request)
             logger.debug("ZOCP UNSUB   : forwarding unsubscription request: %s" % data)
-            self.signal_unsubscribe(emit_peer, emitter, recv_peer, receiver)
+            self.signal_unsubscribe(recv_peer, receiver, emit_peer, emitter)
             return
 
         if emitter is not None:
