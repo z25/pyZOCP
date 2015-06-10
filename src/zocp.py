@@ -296,6 +296,22 @@ class ZOCP(Pyre):
         """
         self._register_param(name, vec4f, 'vec4f', access, min, max, step)
 
+    def get_value(self, name):
+        """
+        Retrieve the current value of a named parameter in the capability tree
+
+        Arguments:
+        * name: the name of the parameter in the capability tree
+
+        returns the value of the parameter or None
+
+        Note:
+            This is a temporary convenience method
+        """
+        # TODO: could use dict_get(self.capability, keys)
+        # for nested values
+        return self.capability[name]['value']
+
     #########################################
     # Node methods to peers
     #########################################

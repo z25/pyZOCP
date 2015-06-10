@@ -79,6 +79,13 @@ class ZOCPTest(unittest.TestCase):
         self.assertIn("TEST", self.node2.peer_groups())
     # end test_peer_groups
 
+    def test_get_value(self):
+        self.node1.register_float("TestEmitFloat", 1.0, 'rwe')
+        self.node2.register_float("TestRecvFloat", 1.0, 'rws')
+        self.assertEqual(self.node1.get_value("TestEmitFloat"), 1.0)
+        self.assertEqual(self.node2.get_value("TestRecvFloat"), 1.0)
+    # end test_get_value
+
     def test_signal_subscribe(self):
         self.node1.register_float("TestEmitFloat", 1.0, 'rwe')
         self.node2.register_float("TestRecvFloat", 1.0, 'rws')
