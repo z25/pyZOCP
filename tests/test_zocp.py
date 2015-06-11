@@ -79,6 +79,13 @@ class ZOCPTest(unittest.TestCase):
         self.assertIn("TEST", self.node2.peer_groups())
     # end test_peer_groups
 
+    def test_get_value(self):
+        self.node1.register_float("TestEmitFloat", 1.0, 'rwe')
+        self.node2.register_float("TestRecvFloat", 1.0, 'rws')
+        self.assertEqual(self.node1.get_value("TestEmitFloat"), 1.0)
+        self.assertEqual(self.node2.get_value("TestRecvFloat"), 1.0)
+    # end test_get_value
+
     def test_signal_subscribe(self):
         self.node1.register_float("TestEmitFloat", 1.0, 'rwe')
         self.node2.register_float("TestRecvFloat", 1.0, 'rws')
@@ -109,6 +116,13 @@ class ZOCPTest(unittest.TestCase):
         self.node2.run_once(5)
         self.node1.signal_subscribe(self.node2.uuid(), "TestRecvFloat", self.node1.uuid(), "TestEmitFloat")
         # give time for dispersion
+        # a subscription results in:
+        # * whisper MOD, to update subscribers (self._on_modified)
+        # * whisper SUB, to the receiver or emitter
+        # We need to receive:
+        # * a forwarded SUB (in case of self emitter subscribe)
+        # * a MOD of the peer
+        # so we need to do two runs on both nodes
         self.node2.run_once(5)
         self.node1.run_once(5)
         self.node2.run_once(5)
@@ -118,10 +132,19 @@ class ZOCPTest(unittest.TestCase):
         self.assertIn("TestRecvFloat", self.node2.subscriptions[self.node1.uuid()]["TestEmitFloat"])
         # unsubscribe
         self.node1.signal_unsubscribe(self.node2.uuid(), "TestRecvFloat", self.node1.uuid(), "TestEmitFloat")
-        #time.sleep(0.5)
+        # An unsubscribe results in:
+        # * whisper MOD, to update subscribers (self._on_modified)
+        # * whisper UNSUB, to the receiver or emitter
+        # We need to receive:
+        # * a forwarded UNSUB (in case of self emitter subscribe)
+        # * a MOD of the peer
+        # so we need to do two runs on both nodes
         self.node2.run_once(5)
-        #self.assertNotIn("TestRecvFloat", self.node2.subscriptions.get(self.node1.uuid(), {}).get("TestEmitFloat", {}))
-        #self.assertNotIn("TestRecvFloat", self.node1.subscribers.get(self.node2.uuid(), {}).get("TestEmitFloat", {}))
+        self.node1.run_once(5)
+        self.node2.run_once(5)
+        self.node1.run_once(5)
+        self.assertNotIn("TestRecvFloat", self.node2.subscriptions.get(self.node1.uuid(), {}).get("TestEmitFloat", {}))
+        self.assertNotIn("TestRecvFloat", self.node1.subscribers.get(self.node2.uuid(), {}).get("TestEmitFloat", {}))
 
     def test_emit_signal(self):
         self.node1.register_float("TestEmitFloat", 1.0, 'rwe')
