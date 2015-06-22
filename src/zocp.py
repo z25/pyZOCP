@@ -216,7 +216,6 @@ class ZOCP(Pyre):
         """
         Register an integer variable
 
-        Arguments are:
         :param str name: the name of the variable as how nodes can refer to it
         :param bool value: the variable value
         :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
