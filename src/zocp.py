@@ -77,7 +77,11 @@ def dict_merge(a, b, path=None):
     return a
 
 class ZOCP(Pyre):
-
+    """
+    The ZOCP class provides all methods for ZOCP nodes
+    
+    :param str name: Name of the node, if not given a random name will be created
+    """
     def __init__(self, *args, **kwargs):
         super(ZOCP, self).__init__(*args, **kwargs)
         self.subscriptions = {}
@@ -99,6 +103,7 @@ class ZOCP(Pyre):
     def set_capability(self, cap):
         """
         Set node's capability, overwites previous
+        :param dict cap: The dictionary replacing the previous capabilities
         """
         self.capability = cap
         self._on_modified(data=cap)
@@ -106,24 +111,9 @@ class ZOCP(Pyre):
     def get_capability(self):
         """
         Return node's capabilities
+        :return: The capability dictionary
         """
         return self.capability
-
-    def set_node_name(self, name):
-        """
-        Set node's name, overwites previous
-        """
-        # Is handled by Pyre
-        logger.warning("DEPRECATED: set_node_name is deprecated, use set_name")
-        self.set_name(name)
-
-    def get_node_name(self, name):
-        """
-        Return node's name
-        """
-        # Is handled by Pyre
-        logger.warning("DEPRECATED: get_node_name is deprecated, use name")
-        return self.name()
 
     def set_node_location(self, location=[0,0,0]):
         """
@@ -182,130 +172,114 @@ class ZOCP(Pyre):
             self._cur_obj[name]['step'] = step
         self._on_modified(data={name: self._cur_obj[name]})
 
-    def register_int(self, name, int, access='r', min=None, max=None, step=None):
+    def register_int(self, name, value, access='r', min=None, max=None, step=None):
         """
         Register an integer variable
 
-        Arguments are:
-        * name: the name of the variable as how nodes can refer to it
-        * int: the variable
-        * access: 'r' and/or 'w' as to if it's readable and writeable state
-                  'e' if the value can be emitted and/or 's' if it can be received
-        * min: minimal value
-        * max: maximal value
-        * step: step value used by increments and decrements
+        :param str name: the name of the variable as how nodes can refer to it
+        :param int value: the variable value
+        :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
+        :param int min: minimal value
+        :param int max: maximal value
+        :param int step: step value for increments and decrements
+        
         """
-        self._register_param(name, int, 'int', access, min, max, step)
+        self._register_param(name, value, 'int', access, min, max, step)
 
-    def register_float(self, name, flt, access='r', min=None, max=None, step=None):
+    def register_float(self, name, value, access='r', min=None, max=None, step=None):
         """
         Register a float variable
 
-        Arguments are:
-        * name: the name of the variable as how nodes can refer to it
-        * int: the variable
-        * access: 'r' and/or 'w' as to if it's readable and writeable state
-                  'e' if the value can be emitted and/or 's' if it can be received
-        * min: minimal value
-        * max: maximal value
-        * step: step value used by increments and decrements
+        :param str name: the name of the variable as how nodes can refer to it
+        :param float value: the variable value
+        :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
+        :param float min: minimal value
+        :param float max: maximal value
+        :param float step: step value for increments and decrements
         """
-        self._register_param(name, flt, 'flt', access, min, max, step)
+        self._register_param(name, value, 'flt', access, min, max, step)
 
-    def register_percent(self, name, pct, access='r', min=None, max=None, step=None):
+    def register_percent(self, name, value, access='r', min=None, max=None, step=None):
         """
         Register a percentage variable
 
-        Arguments are:
-        * name: the name of the variable as how nodes can refer to it
-        * int: the variable
-        * access: 'r' and/or 'w' as to if it's readable and writeable state
-                  'e' if the value can be emitted and/or 's' if it can be received
-        * min: minimal value
-        * max: maximal value
-        * step: step value used by increments and decrements
+        :param str name: the name of the variable as how nodes can refer to it
+        :param float value: the variable value
+        :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
+        :param float min: minimal value
+        :param float max: maximal value
+        :param float step: step value for increments and decrements
         """
-        self._register_param(name, pct, 'percent', access, min, max, step)
+        self._register_param(name, value, 'percent', access, min, max, step)
 
-    def register_bool(self, name, bl, access='r'):
+    def register_bool(self, name, value, access='r'):
         """
         Register an integer variable
 
         Arguments are:
-        * name: the name of the variable as how nodes can refer to it
-        * int: the variable
-        * access: 'r' and/or 'w' as to if it's readable and writeable state
-                  'e' if the value can be emitted and/or 's' if it can be received
+        :param str name: the name of the variable as how nodes can refer to it
+        :param bool value: the variable value
+        :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
         """
-        self._register_param(name, bl, 'bool', access)
+        self._register_param(name, value, 'bool', access)
 
-    def register_string(self, name, s, access='r'):
+    def register_string(self, name, value, access='r'):
         """
         Register a string variable
 
-        Arguments are:
-        * name: the name of the variable as how nodes can refer to it
-        * s: the variable
-        * access: 'r' and/or 'w' as to if it's readable and writeable state
-                  'e' if the value can be emitted and/or 's' if it can be received
+        :param str name: the name of the variable as how nodes can refer to it
+        :param str value: the variable value
+        :param str access: set the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
         """
-        self._register_param(name, s, 'string', access)
+        self._register_param(name, value, 'string', access)
 
-    def register_vec2f(self, name, vec2f, access='r', min=None, max=None, step=None):
+    def register_vec2f(self, name, value, access='r', min=None, max=None, step=None):
         """
         Register a 2 dimensional vector variable
 
-        Arguments are:
-        * name: the name of the variable as how nodes can refer to it
-        * vec2f: A list containing two floats
-        * access: 'r' and/or 'w' as to if it's readable and writeable state
-                  'e' if the value can be emitted and/or 's' if it can be received
-        * min: minimal value
-        * max: maximal value
-        * step: step value used by increments and decrements
+        :param str name: the name of the variable as how nodes can refer to it
+        :param tuple value: the variable value
+        :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
+        :param tuple min: minimal value
+        :param tuple max: maximal value
+        :param tuple step: step value for increments and decrements
         """
-        self._register_param(name, vec2f, 'vec2f', access, min, max, step)
+        self._register_param(name, value, 'vec2f', access, min, max, step)
 
-    def register_vec3f(self, name, vec3f, access='r', min=None, max=None, step=None):
+    def register_vec3f(self, name, value, access='r', min=None, max=None, step=None):
         """
         Register a three dimensional vector variable
 
-        Arguments are:
-        * name: the name of the variable as how nodes can refer to it
-        * vec3f: A list containing three floats
-        * access: 'r' and/or 'w' as to if it's readable and writeable state
-                  'e' if the value can be emitted and/or 's' if it can be received
-        * min: minimal value
-        * max: maximal value
-        * step: step value used by increments and decrements
+        :param str name: the name of the variable as how nodes can refer to it
+        :param tuple value: the variable value
+        :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
+        :param tuple min: minimal value
+        :param tuple max: maximal value
+        :param tuple step: step value for increments and decrements
         """
-        self._register_param(name, vec3f, 'vec3f', access, min, max, step)
+        self._register_param(name, value, 'vec3f', access, min, max, step)
 
-    def register_vec4f(self, name, vec4f, access='r', min=None, max=None, step=None):
+    def register_vec4f(self, name, value, access='r', min=None, max=None, step=None):
         """
         Register a four dimensional vector variable
 
-        Arguments are:
-        * name: the name of the variable as how nodes can refer to it
-        * vec4f: A list containing four floats
-        * access: 'r' and/or 'w' as to if it's readable and writeable state
-                  'e' if the value can be emitted and/or 's' if it can be received
-        * min: minimal value
-        * max: maximal value
-        * step: step value used by increments and decrements
+        :param str name: the name of the variable as how nodes can refer to it
+        :param tuple value: the variable value
+        :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
+        :param tuple min: minimal value
+        :param tuple max: maximal value
+        :param tuple step: step value for increments and decrements
         """
-        self._register_param(name, vec4f, 'vec4f', access, min, max, step)
+        self._register_param(name, value, 'vec4f', access, min, max, step)
 
     def get_value(self, name):
         """
         Retrieve the current value of a named parameter in the capability tree
 
-        Arguments:
-        * name: the name of the parameter in the capability tree
+        :param str name: the name of the variable as how nodes refer to it
+        :return: the value of the named variable
 
-        returns the value of the parameter or None
-
-        Note:
+        .. note:
             This is a temporary convenience method
         """
         # TODO: could use dict_get(self.capability, keys)
@@ -349,20 +323,19 @@ class ZOCP(Pyre):
         """
         Subscribe a receiver to an emitter
 
-        Arguments are:
-        * recv_peer: id of the receiving peer.
-        * receiver: capability id of the receiver on the receiving peer.
-                    If None, no capability on the receiving peer is
+        :param uuid recv_peer: the id of the receiving peer
+        :param str receiver: the name of the receiving variable.\
+                    If None, no capability on the receiving peer is\
                     updated, but a on_peer_signal event is still fired.
-        * emit_peer: id of the peer to subscribe to
-        * emitter: capability name of the emitter on the peer to
-                   subscribe to. If None, all capabilities will emit to
-                   the receiver
+        :param uuid emit_peer: the id of the emitting peer
+        :param str emitter: the name the emitter. If None, all\
+                    capabilities will emit to the receiver
 
-        A third node can instruct two nodes to subscribe to one another
-        by specifying the ids of the peers. The subscription request
-        is then sent to the emitter node which in turn forwards the
-        subscribtion request to the receiver node.
+        .. note::
+            A third node can instruct two nodes to subscribe to one another
+            by specifying the ids of the peers. The subscription request
+            is then sent to the emitter node which in turn forwards the
+            subscribtion request to the receiver node.
         """
         if recv_peer == self.uuid():
             # we are the receiver so register the emitter
@@ -412,19 +385,18 @@ class ZOCP(Pyre):
         """
         Unsubscribe a receiver from an emitter
 
-        Arguments are:
-        * recv_peer: id of the receiving peer
-        * receiver: capability id of the receiver on the receiving peer, or
-                    None if no receiver was specified when subscribing
-        * emit_peer: id of the peer to unsubscribe from
-        * emitter: capability name of the emitter on the peer to
-                   unsubscribe from, or None if no emitter was specified
-                   during subscription
+        :param uuid recv_peer: the id of the receiving peer
+        :param str receiver: the name of the receiving variable, or\
+                    None if no receiver was specified when subscribing.
+        :param uuid emit_peer: the id of the emitting peer
+        :param str emitter: the name the emitter, or None if no emitter\
+                    was specified during subscription
 
-        A third node can instruct two nodes to unsubscribe from one another
-        by specifying the ids of the peers. The subscription request
-        is then sent to the emitter node which in turn forwards the
-        subscribtion request to the receiver node.
+        .. note::
+            A third node can instruct two nodes to unsubscribe from one another
+            by specifying the ids of the peers. The subscription request
+            is then sent to the emitter node which in turn forwards the
+            subscribtion request to the receiver node.
         """
         if recv_peer == self.uuid():
             # we are the receiver so unregister the emitter
@@ -464,16 +436,15 @@ class ZOCP(Pyre):
         msg = json.dumps({'UNSUB': [emit_peer.hex, emitter, recv_peer.hex, receiver]})
         self.whisper(emit_peer, msg.encode('utf-8'))
 
-    def emit_signal(self, emitter, data):
+    def emit_signal(self, emitter, value):
         """
         Update the value of the emitter and signal all subscribed receivers
 
-        Arguments are:
-        * emitter: name of the emitting capability
-        * data: value
+        :param str emitter: name of the emitting variable
+        :param value: the new value
         """
-        self.capability[emitter]['value'] = data
-        msg = json.dumps({'SIG': [emitter, data]})
+        self.capability[emitter]['value'] = value
+        msg = json.dumps({'SIG': [emitter, value]})
 
         for subscriber in self.subscribers:
             if (None in self.subscribers[subscriber] or
@@ -485,21 +456,62 @@ class ZOCP(Pyre):
     # ZRE event methods. These can be overwritten
     #########################################
     def on_peer_enter(self, peer, name, *args, **kwargs):
+        """
+        This method is called when a new peer is discovered
+        
+        :param uuid peer: the id of the new peer
+        :param str name: the name of the new peer
+        """
         logger.debug("ZRE ENTER    : %s" %(name))
 
     def on_peer_exit(self, peer, name, *args, **kwargs):
+        """
+        This method is called when a peer is exiting
+        
+        :param uuid peer: the id of the exiting peer
+        :param str name: the name of the exiting peer
+        """
         logger.debug("ZRE EXIT     : %s" %(name))
 
     def on_peer_join(self, peer, name, grp, *args, **kwargs):
+        """
+        This method is called when a peer is joining a group
+        
+        :param uuid peer: the id of the joining peer
+        :param str name: the name of the joining peer
+        :param str grp: the name of the group the peer is joining
+        """
         logger.debug("ZRE JOIN     : %s joined group %s" %(name, grp))
 
     def on_peer_leave(self, peer, name, grp, *args, **kwargs):
+        """
+        This method is called when a peer is leaving a group
+        
+        :param uuid peer: the id of the leaving peer
+        :param str name: the name of the leaving peer
+        :param str grp: the name of the group the peer is leaving
+        """
         logger.debug("ZRE LEAVE    : %s left group %s" %(name, grp))
 
     def on_peer_whisper(self, peer, name, data, *args, **kwargs):
+        """
+        This method is called when a peer is whispering
+        
+        :param uuid peer: the id of the whispering peer
+        :param str name: the name of the whispering peer
+        :param data: the data the peer is whispering
+        """
         logger.debug("ZRE WHISPER  : %s whispered: %s" %(name, data))
 
     def on_peer_shout(self, peer, name, grp, data, *args, **kwargs):
+        """
+        This method is called when a peer is shouting
+        
+        :param uuid peer: the id of the shouting peer
+        :param str name: the name of the shouting peer
+        :param str grp: the name of the group the peer is shouting in
+        :param data: the data the peer is shouting
+        """
         logger.debug("ZRE SHOUT    : %s shouted in group %s: %s" %(name, grp, data))
 
     #########################################
@@ -515,10 +527,11 @@ class ZOCP(Pyre):
         """
         Called when a peer signals that its capability tree is modified.
 
-        peer: id of peer that made the change
-        name: name of peer that made the change
-        data: changed data, formatted as a partial capability dictionary, containing
-              only the changed part(s) of the capability tree of the node
+        :param uuid peer: the id of the shouting peer
+        :param str name: the name of the shouting peer
+        :param dict data: changed data, formatted as a partial \
+                capability dictionary, containing only the changed \
+                part(s) of the capability tree of the node
         """
         logger.debug("ZOCP PEER MODIFIED: %s modified %s" %(name, data))
 
@@ -529,10 +542,10 @@ class ZOCP(Pyre):
         """
         Called when a peer subscribes to an emitter on this node.
 
-        peer: id of peer that subscribed
-        name: name of peer that subscribed
-        data: changed data, formatted as [emitter, receiver]
-              emitter: name of the emitter on this node
+        :param uuid peer: the id of the shouting peer
+        :param str name: the name of the shouting peer
+        :param list data: changed data, formatted as [emitter, receiver]\
+              emitter: name of the emitter on this node\
               receiver: name of the receiver on the subscriber
         """
         [emit_peer, emitter, recv_peer, receiver] = data
@@ -547,10 +560,10 @@ class ZOCP(Pyre):
         """
         Called when a peer unsubscribes from an emitter on this node.
 
-        peer: id of peer that unsubscribed
-        name: name of peer that unsubscribed
-        data: changed data, formatted as [emitter, receiver]
-              emitter: name of the emitter on this node
+        :param uuid peer: the id of the shouting peer
+        :param str name: the name of the shouting peer
+        :param list data: changed data, formatted as [emitter, receiver]\
+              emitter: name of the emitter on this node\
               receiver: name of the receiver on the subscriber
         """
         [emit_peer, emitter, recv_peer, receiver] = data
@@ -565,12 +578,12 @@ class ZOCP(Pyre):
         """
         Called when a peer signals that some of its data is modified.
 
-        peer: id of peer whose data has been changed
-        name: name of peer whose data has been changed
-        data: changed data, formatted as [emitter, value, [sensors1, ...]]
-              emitter: name of the emitter on the subscribee
-              value: value of the emitter
-              [sensor1,...]: list of names of sensors on the subscriber
+        :param uuid peer: the id of the shouting peer
+        :param str name: the name of the shouting peer
+        :param list data: changed data, formatted as [emitter, value, [sensors1, ...]]\
+              emitter: name of the emitter on the subscribee\
+              value: value of the emitter\
+              [sensor1,...]: list of names of sensors on the subscriber\
                              receiving the signal
         """
         logger.debug("ZOCP PEER SIGNALED: %s modified %s" %(name, data))
@@ -579,10 +592,11 @@ class ZOCP(Pyre):
         """
         Called when some data is modified on this node.
 
-        peer: id of peer that made the change
-        name: name of peer that made the change
-        data: changed data, formatted as a partial capability dictionary, containing
-              only the changed part(s) of the capability tree of the node
+        :param uuid peer: the id of the shouting peer
+        :param str name: the name of the shouting peer
+        :param dict data: changed data, formatted as a partial \
+                capability dictionary, containing only the changed\
+                part(s) of the capability tree of the node
         """
         if peer:
             if not name:
