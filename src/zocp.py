@@ -172,105 +172,105 @@ class ZOCP(Pyre):
             self._cur_obj[name]['step'] = step
         self._on_modified(data={name: self._cur_obj[name]})
 
-    def register_int(self, name, val, access='r', min=None, max=None, step=None):
+    def register_int(self, name, value, access='r', min=None, max=None, step=None):
         """
         Register an integer variable
 
         :param str name: the name of the variable as how nodes can refer to it
-        :param int val: the variable value
+        :param int value: the variable value
         :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
         :param int min: minimal value
         :param int max: maximal value
         :param int step: step value for increments and decrements
         
         """
-        self._register_param(name, val, 'int', access, min, max, step)
+        self._register_param(name, value, 'int', access, min, max, step)
 
-    def register_float(self, name, val, access='r', min=None, max=None, step=None):
+    def register_float(self, name, value, access='r', min=None, max=None, step=None):
         """
         Register a float variable
 
         :param str name: the name of the variable as how nodes can refer to it
-        :param float val: the variable value
+        :param float value: the variable value
         :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
         :param float min: minimal value
         :param float max: maximal value
         :param float step: step value for increments and decrements
         """
-        self._register_param(name, val, 'flt', access, min, max, step)
+        self._register_param(name, value, 'flt', access, min, max, step)
 
-    def register_percent(self, name, val, access='r', min=None, max=None, step=None):
+    def register_percent(self, name, value, access='r', min=None, max=None, step=None):
         """
         Register a percentage variable
 
         :param str name: the name of the variable as how nodes can refer to it
-        :param float val: the variable value
+        :param float value: the variable value
         :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
         :param float min: minimal value
         :param float max: maximal value
         :param float step: step value for increments and decrements
         """
-        self._register_param(name, val, 'percent', access, min, max, step)
+        self._register_param(name, value, 'percent', access, min, max, step)
 
-    def register_bool(self, name, val, access='r'):
+    def register_bool(self, name, value, access='r'):
         """
         Register an integer variable
 
         Arguments are:
         :param str name: the name of the variable as how nodes can refer to it
-        :param bool val: the variable value
+        :param bool value: the variable value
         :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
         """
-        self._register_param(name, val, 'bool', access)
+        self._register_param(name, value, 'bool', access)
 
-    def register_string(self, name, val, access='r'):
+    def register_string(self, name, value, access='r'):
         """
         Register a string variable
 
         :param str name: the name of the variable as how nodes can refer to it
-        :param str val: the variable value
+        :param str value: the variable value
         :param str access: set the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
         """
-        self._register_param(name, val, 'string', access)
+        self._register_param(name, value, 'string', access)
 
-    def register_vec2f(self, name, val, access='r', min=None, max=None, step=None):
+    def register_vec2f(self, name, value, access='r', min=None, max=None, step=None):
         """
         Register a 2 dimensional vector variable
 
         :param str name: the name of the variable as how nodes can refer to it
-        :param tuple val: the variable value
+        :param tuple value: the variable value
         :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
         :param tuple min: minimal value
         :param tuple max: maximal value
         :param tuple step: step value for increments and decrements
         """
-        self._register_param(name, vec2f, 'vec2f', access, min, max, step)
+        self._register_param(name, value, 'vec2f', access, min, max, step)
 
-    def register_vec3f(self, name, val, access='r', min=None, max=None, step=None):
+    def register_vec3f(self, name, value, access='r', min=None, max=None, step=None):
         """
         Register a three dimensional vector variable
 
         :param str name: the name of the variable as how nodes can refer to it
-        :param tuple val: the variable value
+        :param tuple value: the variable value
         :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
         :param tuple min: minimal value
         :param tuple max: maximal value
         :param tuple step: step value for increments and decrements
         """
-        self._register_param(name, vec3f, 'vec3f', access, min, max, step)
+        self._register_param(name, value, 'vec3f', access, min, max, step)
 
-    def register_vec4f(self, name, val, access='r', min=None, max=None, step=None):
+    def register_vec4f(self, name, value, access='r', min=None, max=None, step=None):
         """
         Register a four dimensional vector variable
 
         :param str name: the name of the variable as how nodes can refer to it
-        :param tuple val: the variable value
+        :param tuple value: the variable value
         :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
         :param tuple min: minimal value
         :param tuple max: maximal value
         :param tuple step: step value for increments and decrements
         """
-        self._register_param(name, vec4f, 'vec4f', access, min, max, step)
+        self._register_param(name, value, 'vec4f', access, min, max, step)
 
     def get_value(self, name):
         """
@@ -443,8 +443,8 @@ class ZOCP(Pyre):
         :param str emitter: name of the emitting variable
         :param value: the new value
         """
-        self.capability[emitter]['value'] = data
-        msg = json.dumps({'SIG': [emitter, data]})
+        self.capability[emitter]['value'] = value
+        msg = json.dumps({'SIG': [emitter, value]})
 
         for subscriber in self.subscribers:
             if (None in self.subscribers[subscriber] or
