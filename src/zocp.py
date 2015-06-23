@@ -454,7 +454,7 @@ class ZOCP(Pyre):
     #########################################
     # ZRE event methods. These can be overwritten
     #########################################
-    def on_peer_enter(self, peer, name, hdrs, *args, **kwargs):
+    def on_peer_enter(self, peer, name, headers, *args, **kwargs):
         """
         This method is called when a new peer is discovered
         
