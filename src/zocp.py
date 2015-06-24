@@ -216,7 +216,6 @@ class ZOCP(Pyre):
         """
         Register an integer variable
 
-        Arguments are:
         :param str name: the name of the variable as how nodes can refer to it
         :param bool value: the variable value
         :param str access: the access state of the variable. 'r'=readable, 'w'=writeable, 'e'=signal emitter, 's'=signal sensor
@@ -455,14 +454,15 @@ class ZOCP(Pyre):
     #########################################
     # ZRE event methods. These can be overwritten
     #########################################
-    def on_peer_enter(self, peer, name, *args, **kwargs):
+    def on_peer_enter(self, peer, name, headers, *args, **kwargs):
         """
         This method is called when a new peer is discovered
         
         :param uuid peer: the id of the new peer
         :param str name: the name of the new peer
+        :param hdrs: any headers of the peer
         """
-        logger.debug("ZRE ENTER    : %s" %(name))
+        logger.debug("ZRE ENTER    :%s: %s" %(self.name(), name))
 
     def on_peer_exit(self, peer, name, *args, **kwargs):
         """
@@ -471,7 +471,7 @@ class ZOCP(Pyre):
         :param uuid peer: the id of the exiting peer
         :param str name: the name of the exiting peer
         """
-        logger.debug("ZRE EXIT     : %s" %(name))
+        logger.debug("ZRE EXIT     :%s: %s" %(self.name(), name))
 
     def on_peer_join(self, peer, name, grp, *args, **kwargs):
         """
@@ -481,7 +481,7 @@ class ZOCP(Pyre):
         :param str name: the name of the joining peer
         :param str grp: the name of the group the peer is joining
         """
-        logger.debug("ZRE JOIN     : %s joined group %s" %(name, grp))
+        logger.debug("ZRE JOIN     :%s: %s joined group %s" %(self.name(), name, grp))
 
     def on_peer_leave(self, peer, name, grp, *args, **kwargs):
         """
@@ -491,7 +491,7 @@ class ZOCP(Pyre):
         :param str name: the name of the leaving peer
         :param str grp: the name of the group the peer is leaving
         """
-        logger.debug("ZRE LEAVE    : %s left group %s" %(name, grp))
+        logger.debug("ZRE LEAVE    :%s: %s left group %s" %(self.name(), name, grp))
 
     def on_peer_whisper(self, peer, name, data, *args, **kwargs):
         """
@@ -501,7 +501,7 @@ class ZOCP(Pyre):
         :param str name: the name of the whispering peer
         :param data: the data the peer is whispering
         """
-        logger.debug("ZRE WHISPER  : %s whispered: %s" %(name, data))
+        logger.debug("ZRE WHISPER  :%s: %s whispered: %s" %(self.name(), name, data))
 
     def on_peer_shout(self, peer, name, grp, data, *args, **kwargs):
         """
@@ -512,7 +512,7 @@ class ZOCP(Pyre):
         :param str grp: the name of the group the peer is shouting in
         :param data: the data the peer is shouting
         """
-        logger.debug("ZRE SHOUT    : %s shouted in group %s: %s" %(name, grp, data))
+        logger.debug("ZRE SHOUT    :%s: %s shouted in group %s: %s" %(self.name(), name, grp, data))
 
     #########################################
     # ZOCP event methods. These can be overwritten
@@ -533,10 +533,10 @@ class ZOCP(Pyre):
                 capability dictionary, containing only the changed \
                 part(s) of the capability tree of the node
         """
-        logger.debug("ZOCP PEER MODIFIED: %s modified %s" %(name, data))
+        logger.debug("ZOCP PEER MODIFIED:%s: %s modified %s" %(self.name(), name, data))
 
     def on_peer_replied(self, peer, name, data, *args, **kwargs):
-        logger.debug("ZOCP PEER REPLIED : %s modified %s" %(name, data))
+        logger.debug("ZOCP PEER REPLIED :%s: %s modified %s" %(self.name(), name, data))
 
     def on_peer_subscribed(self, peer, name, data, *args, **kwargs):
         """
@@ -550,11 +550,11 @@ class ZOCP(Pyre):
         """
         [emit_peer, emitter, recv_peer, receiver] = data
         if emitter is None:
-            logger.debug("ZOCP PEER SUBSCRIBED: %s subscribed to all emitters" %(name))
+            logger.debug("ZOCP PEER SUBSCRIBED:%s: %s subscribed to all emitters" %(self.name(), name))
         elif receiver is None:
-            logger.debug("ZOCP PEER SUBSCRIBED: %s subscribed to %s" %(name, emitter))
+            logger.debug("ZOCP PEER SUBSCRIBED:%s: %s subscribed to %s" %(self.name(), name, emitter))
         else:
-            logger.debug("ZOCP PEER SUBSCRIBED: %s subscribed %s to %s" %(name, receiver, emitter))
+            logger.debug("ZOCP PEER SUBSCRIBED:%s: %s subscribed %s to %s" %(self.name(), name, receiver, emitter))
 
     def on_peer_unsubscribed(self, peer, name, data, *args, **kwargs):
         """
@@ -568,11 +568,11 @@ class ZOCP(Pyre):
         """
         [emit_peer, emitter, recv_peer, receiver] = data
         if emitter is None:
-            logger.debug("ZOCP PEER UNSUBSCRIBED: %s unsubscribed from all emitters" %(name))
+            logger.debug("ZOCP PEER UNSUBSCRIBED:%s: %s unsubscribed from all emitters" %(self.name(), name))
         elif receiver is None:
-            logger.debug("ZOCP PEER UNSUBSCRIBED: %s unsubscribed from %s" %(name, emitter))
+            logger.debug("ZOCP PEER UNSUBSCRIBED:%s: %s unsubscribed from %s" %(self.name(), name, emitter))
         else:
-            logger.debug("ZOCP PEER UNSUBSCRIBED: %s unsubscribed %s from %s" %(name, receiver, emitter))
+            logger.debug("ZOCP PEER UNSUBSCRIBED:%s: %s unsubscribed %s from %s" %(self.name(), name, receiver, emitter))
 
     def on_peer_signaled(self, peer, name, data, *args, **kwargs):
         """
@@ -586,7 +586,7 @@ class ZOCP(Pyre):
               [sensor1,...]: list of names of sensors on the subscriber\
                              receiving the signal
         """
-        logger.debug("ZOCP PEER SIGNALED: %s modified %s" %(name, data))
+        logger.debug("ZOCP PEER SIGNALED:%s: %s modified %s" %(self.name(), name, data))
 
     def on_modified(self, peer, name, data, *args, **kwargs):
         """
@@ -601,7 +601,7 @@ class ZOCP(Pyre):
         if peer:
             if not name:
                 name = peer.hex
-            logger.debug("ZOCP modified by %s with %s" %(name, data))
+            logger.debug("ZOCP %s modified by %s with %s" %(self.name(), name, data))
         else:
             logger.debug("ZOCP modified by %s with %s" %("self", data))
 
@@ -669,7 +669,7 @@ class ZOCP(Pyre):
         try:
             msg = json.loads(msg.pop(0).decode('utf-8'))
         except Exception as e:
-            logger.error("ERROR: %s in %s, type %s" %(e, msg, type))
+            logger.error("ERROR:%s: %s in %s, type %s" %(e, msg, type))
         else:
             for method in msg.keys():
                 if method   == 'GET':
@@ -693,7 +693,7 @@ class ZOCP(Pyre):
                         func = getattr(self, 'handle_'+method)
                         func(msg[method])
                     except:
-                        raise Exception('No %s method on resource: %s' %(method,object))
+                        raise Exception('No %s method on resource:%s: %s' %(method,object))
 
     def _handle_GET(self, data, peer, name, grp=None):
         """
@@ -730,12 +730,13 @@ class ZOCP(Pyre):
             # subscription requests are always initially send to the
             # emitter peer. Recv_peer can only be matched to our id if
             # a subscription to a receiver is done by the emitter.
-            logger.warning("ZOCP SUB     : invalid subscription request: %s" % data)
+            logger.warning("ZOCP SUB     :%s: invalid subscription request: %s" %(self.name(), data))
             return
 
         if recv_peer != peer:
             # check if this should be forwarded (third party subscription request)
-            logger.debug("ZOCP SUB     : forwarding subscription request: %s" % data)
+            print(recv_peer, peer, type(recv_peer), type(peer))
+            logger.debug("ZOCP SUB     :%s: forwarding subscription request: %s" %(self.name(), data))
             self.signal_subscribe(recv_peer, receiver,emit_peer, emitter)
             return
 
@@ -769,12 +770,12 @@ class ZOCP(Pyre):
             # unsubscription requests are always initially send to the
             # emitter peer. Recv_peer can only be matched to our id if
             # a subscription to a receiver is done by the emitter.
-            logger.warning("ZOCP UNSUB   : invalid unsubscription request: %s" % data)
+            logger.warning("ZOCP UNSUB   :%s: invalid unsubscription request: %s" %(self.name(), data))
             return
 
         if recv_peer != peer:
             # check if this should be forwarded (third party unsubscription request)
-            logger.debug("ZOCP UNSUB   : forwarding unsubscription request: %s" % data)
+            logger.debug("ZOCP UNSUB   :%s: forwarding unsubscription request: %s" %(self.name(), data))
             self.signal_unsubscribe(recv_peer, receiver, emit_peer, emitter)
             return
 
