@@ -50,9 +50,9 @@ class SubscriptionMakerNode(ZOCP):
     def update_subscription(self):
         if self.subscribee_peer is not None and self.subscriber_peer is not None:
             if self.subscribe:
-                self.signal_subscribe(self.subscribee_peer, "My String", self.subscriber_peer, "My String")
+                self.signal_subscribe(self.subscriber_peer, "My String", self.subscribee_peer, "My String")
             else:
-                self.signal_unsubscribe(self.subscribee_peer, "My String", self.subscriber_peer, "My String")
+                self.signal_unsubscribe(self.subscriber_peer, "My String", self.subscribee_peer, "My String")
 
         
 if __name__ == '__main__':
@@ -61,5 +61,6 @@ if __name__ == '__main__':
 
     z = SubscriptionMakerNode("3rdparty@%s" % socket.gethostname())
     z.run()
+    del z
     print("FINISH")
 
