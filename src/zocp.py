@@ -421,10 +421,10 @@ class ZOCP(Pyre):
                 emitter in self.subscribers[recv_peer] and
                 receiver in self.subscribers[recv_peer][emitter]):
                 self.subscribers[recv_peer][emitter].remove(receiver)
-            if not any(self.subscribers[recv_peer][emitter]):
-                self.subscribers[recv_peer].pop(emitter)
-            if not any(self.subscribers[recv_peer]):
-                self.subscribers.pop(recv_peer)
+                if not any(self.subscribers[recv_peer]):
+                    self.subscribers.pop(recv_peer)
+                elif not any(self.subscribers[recv_peer][emitter]):
+                    self.subscribers[recv_peer].pop(emitter)
 
             #self.on_peer_unsubscribed(peer, name, data)
 

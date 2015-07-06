@@ -30,5 +30,6 @@ if __name__ == '__main__':
 
     z = SubscriberNode("subscriber@%s" % socket.gethostname())
     z.run()
+    del z
     print("FINISH")
 

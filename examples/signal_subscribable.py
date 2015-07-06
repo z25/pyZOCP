@@ -32,6 +32,7 @@ class SubscribableNode(ZOCP):
                     self.loop_time = time.time() + self.interval
                     self.on_timer()
             except (KeyboardInterrupt, SystemExit):
+                self.stop()
                 break
 
 
@@ -83,6 +84,5 @@ if __name__ == '__main__':
 
     z = SubscribableNode("subscribable@%s" % socket.gethostname())
     z.run()
-    z.stop()
-    z = None
+    del z
     print("FINISH")
