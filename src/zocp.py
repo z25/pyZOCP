@@ -443,12 +443,12 @@ class ZOCP(Pyre):
         :param value: the new value
         """
         self.capability[emitter]['value'] = value
-        msg = json.dumps({'SIG': [emitter, value]})
+        msg = json.dumps({'SIG': [emitter, value]}).encode('utf-8')
 
         for subscriber in self.subscribers:
             if (None in self.subscribers[subscriber] or
                     emitter in self.subscribers[subscriber]):
-                self.whisper(subscriber, msg.encode('utf-8'))
+                self.whisper(subscriber, msg)
 
 
     #########################################
