@@ -842,14 +842,14 @@ class ZOCP(Pyre):
             # emit a SIG instead of a MOD
             name = list(data.keys())[0]
             if len(data[name]) == 1 and 'value' in data[name]:
-                msg = json.dumps({'SIG': [name, data[name]['value']]})
+                msg = json.dumps({'SIG': [name, data[name]['value']]}).encode('utf-8')
                 for subscriber in self.subscribers:
                     # no need to send the signal to the node that
                     # modified the value
                     if subscriber != peer and (
                             None in self.subscribers[subscriber] or
                             name in self.subscribers[subscriber]):
-                        self.whisper(subscriber, msg.encode('utf-8'))
+                        self.whisper(subscriber, msg)
                 data = {}
 
         if any(data):
